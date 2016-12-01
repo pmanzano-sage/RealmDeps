@@ -22,13 +22,34 @@ import android.util.Log
 import android.widget.LinearLayout
 import android.widget.TextView
 import io.realm.Realm
+import io.realm.RealmList
 import io.realm.Sort
+import io.realm.examples.kotlin.dto.DtoCat
 import io.realm.examples.kotlin.model.Cat
 import io.realm.examples.kotlin.model.Dog
 import io.realm.examples.kotlin.model.Person
 import org.jetbrains.anko.async
 import org.jetbrains.anko.uiThread
 import kotlin.properties.Delegates
+import kotlin.system.measureTimeMillis
+
+
+/**
+ *
+ * To Test
+ *
+ * - Something has to be available to iterate over the properties without being very very expensive.
+ * - Test something to get an immutable version of something stored in Realm. (copyFromRealm)
+ * - Check if there is an rx operator to concat the execution of various lambdas. (for transactions)
+ *
+ * Verified
+ * - You can create a model that doesn't have an id or primary key.
+ * - When you delete items that belong to a list pointed by some other object, what happens?
+ *   The list is directly updated.
+ * - When you delete an object that has a RealmList, the list is not automatically deleted!
+ * - Compare the time of executing various operations inside and outside transactions.
+ *   It's slower to do it with multiple transactions... May be the memory consuption is greater.
+ */
 
 class KotlinExampleActivity : Activity() {
 
@@ -39,11 +60,18 @@ class KotlinExampleActivity : Activity() {
     private var rootLayout: LinearLayout by Delegates.notNull()
     private var realm: Realm by Delegates.notNull()
 
+    // Basic person to work with
+    val myDog = Dog("Butcher")
+    val myCats = RealmList<Cat>(Cat("Michifus"), Cat("Pepa"), Cat("Flora"))
+    val me = Person(1, "Pablo", 25, myDog, myCats)
+    val numPersons = 100
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_realm_basic_example)
         rootLayout = findViewById(R.id.container) as LinearLayout
         rootLayout.removeAllViews()
+
 
         // These operations are small enough that
         // we can generally safely run them on the UI thread.
@@ -51,16 +79,38 @@ class KotlinExampleActivity : Activity() {
         // Open the realm for the UI thread.
         realm = Realm.getDefaultInstance()
 
-        basicCRUD(realm)
-        basicQuery(realm)
-        basicLinkQuery(realm)
-
         // Delete all persons
         // Using executeTransaction with a lambda reduces code size and makes it impossible
         // to forget to commit the transaction.
         realm.executeTransaction {
             realm.delete(Person::class.java)
+            realm.delete(Dog::class.java)
+            realm.delete(Cat::class.java)
         }
+
+        // Iteration over declared fields
+        val dto = DtoCat("dto", 10)
+        dto.log()
+        me.log()
+        val cat = dto.toCat()
+        Log.w(TAG, "GATO!!: $cat")
+
+
+        basicCRUD(realm)
+        deleteItemFromList(realm)
+        deleteListOwner(realm)
+        twoItemsPointingToTheSameDep(realm)
+
+        // Transactions' speed
+        testMultipleTransactions(realm)
+        testSingleTransaction(realm)
+
+        // Getting something out of Realm
+        testCopyFromRealm(realm)
+
+        basicQuery(realm)
+        basicLinkQuery(realm)
+
 
         // More complex operations can be executed on another thread, for example using
         // Anko's async extension method.
@@ -87,15 +137,120 @@ class KotlinExampleActivity : Activity() {
         rootLayout.addView(tv)
     }
 
+
+    /**
+     * - New dog "Cockie"
+     * - Two persons having the SAME dog
+     */
+    private fun twoItemsPointingToTheSameDep(realm: Realm) {
+        showStatus("twoItemsPointingToTheSameDep...")
+        val dogName = "Cockie"
+        realm.executeTransaction {
+            val dog = Dog(dogName)
+            val p1 = Person(789, "Pedro", 20, dog)
+            realm.copyToRealmOrUpdate(p1)
+
+            val cockie = realm.where(Dog::class.java).equalTo("name", dogName).findFirst()
+            val p2 = Person(790, "Jose", 20, cockie)
+            realm.copyToRealmOrUpdate(p2)
+        }
+        val numCockies = realm.where(Dog::class.java).equalTo("name", dogName).findAll().count()
+        showStatus("#Cockies=$numCockies")
+    }
+
+    private fun deleteListOwner(realm: Realm) {
+        showStatus("deleteListOwner...")
+        realm.executeTransaction {
+            val person = realm.where(Person::class.java).equalTo("id", 567).findFirst()
+            person.deleteFromRealm()
+        }
+        // If the associated cats are deleted with the person, this count should be 2, otherwise it
+        // will be 4.
+        val numCats = realm.where(Cat::class.java).findAll().count()
+        showStatus("#cats=$numCats")
+    }
+
+
+    private fun deleteItemFromList(realm: Realm) {
+        showStatus("deleteItemFromList...")
+        var numCats = 0
+        realm.executeTransaction {
+            val cats = realm.where(Cat::class.java).equalTo("name", "michifus").findAll()
+            numCats = cats.count()
+            cats.deleteAllFromRealm()
+        }
+        showStatus("$numCats cats deleted")
+    }
+
+    private fun testMultipleTransactions(realm: Realm) {
+        val offset = 1000L
+        val millis = measureTimeMillis {
+            for (i in 1..numPersons) {
+                me.id = offset + i.toLong()
+                realm.executeTransaction {
+                    realm.copyToRealmOrUpdate(me)
+                }
+            }
+        }
+        showStatus("MULTIPLE: $numPersons persons created in $millis milliseconds")
+    }
+
+    private fun testSingleTransaction(realm: Realm) {
+        val offset = 2000L
+        val millis = measureTimeMillis {
+            realm.executeTransaction {
+                for (i in 1..numPersons) {
+                    me.id = offset + i.toLong()
+                    realm.copyToRealmOrUpdate(me)
+                }
+            }
+        }
+        showStatus("SINGLE: $numPersons persons created in $millis milliseconds")
+    }
+
+
+    private fun testCopyFromRealm(realm: Realm) {
+        realm.executeTransaction {
+            val someone = realm.where(Person::class.java).equalTo("id", 1100).findFirst()
+            if (someone != null) {
+
+                // Everything that is copied from Realm out, is not managed (dependencies included)
+                val myself = realm.copyFromRealm(someone)
+                showStatus("testCopyFromRealm: $myself")
+                // showStatus("testCopyFromRealm: ${myself.shortName()}")
+                val man1 = myself.isManaged
+                val man2 = myself.cats.isManaged
+                val man3 = myself.cats.get(0).isManaged
+                showStatus("testCopyFromRealm: $man1 $man2 $man3")
+            } else {
+                showStatus("testCopyFromRealm: could not find person 1100")
+            }
+        }
+    }
+
     private fun basicCRUD(realm: Realm) {
         showStatus("Perform basic Create/Read/Update/Delete (CRUD) operations...")
 
         // All writes must be wrapped in a transaction to facilitate safe multi threading
         realm.executeTransaction {
-            // Add a person
-            val person = realm.createObject(Person::class.java, 1)
-            person.name = "Young Person"
-            person.age = 14
+            val dog = Dog("Butcher")
+            val cats = arrayOf(Cat("michifus"), Cat("Pepa"), Cat("Flora"))
+            val rcats = RealmList<Cat>()
+            rcats.addAll(cats)
+            val p1 = Person(1234, "Juan", 15, dog, rcats)
+
+            // Another option is create the person with an empty list associated, and then
+            // get the list, clear it, and add all the items.
+            // p1.cats.clear()
+            // p1.cats.addAll(cats)
+
+            Log.d(TAG, "PERSON= ${p1.hashCode()}")
+
+            realm.copyToRealmOrUpdate(p1)
+
+            val p2 = Person(567, "Juan", 15, dog, rcats)
+            realm.copyToRealmOrUpdate(p2)
+
         }
 
         // Find the first person (no query conditions) and read a field

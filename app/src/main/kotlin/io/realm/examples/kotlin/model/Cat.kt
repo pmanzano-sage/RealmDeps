@@ -18,6 +18,15 @@ package io.realm.examples.kotlin.model
 
 import io.realm.RealmObject
 
-open class Cat : RealmObject() {
-    open var name: String? = null
+open class Cat(open var name: String = "", open var age: Int = 0) : RealmObject() {
+    override fun toString(): String {
+        return "$name $age"
+    }
+
+    fun log() {
+        for (prop in Cat::class.java.declaredFields) {
+            println("${prop.name} = ${prop.get(this)}")
+        }
+    }
+
 }

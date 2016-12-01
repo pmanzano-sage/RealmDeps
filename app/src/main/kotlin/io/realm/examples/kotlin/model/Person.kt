@@ -49,4 +49,19 @@ open class Person(
     // The Kotlin compiler generates standard getters and setters.
     // Realm will overload them and code inside them is ignored.
     // So if you prefer you can also just have empty abstract methods.
+
+    fun readyToSave(): Boolean {
+        return name.isNotEmpty() && age > 0
+    }
+
+    override fun toString(): String {
+        return "$name ($age) dog:$dog cats:${cats.joinToString(transform = Cat::toString, prefix = "[", postfix = "]")}"
+    }
+
+    fun log() {
+        for (prop in Person::class.java.declaredFields) {
+            println("${prop.name} = ${prop.get(this)} : ${prop.genericType} ${prop.type}")
+        }
+    }
+
 }

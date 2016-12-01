@@ -19,6 +19,7 @@ package io.realm.examples.kotlin
 import android.app.Application
 
 import io.realm.Realm
+import io.realm.RealmConfiguration
 
 class MyApplication : Application() {
 
@@ -26,5 +27,8 @@ class MyApplication : Application() {
         super.onCreate()
         // Initialize Realm. Should only be done once when the application starts.
         Realm.init(this)
+        val realmConfig = RealmConfiguration.Builder().deleteRealmIfMigrationNeeded().build()
+        Realm.setDefaultConfiguration(realmConfig)
+
     }
 }
