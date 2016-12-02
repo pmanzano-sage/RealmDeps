@@ -1,67 +1,15 @@
-/*
- * Copyright 2015 Realm Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package io.realm.examples.kotlin.model
 
-import io.realm.RealmList
-import io.realm.RealmObject
-import io.realm.annotations.Ignore
-import io.realm.annotations.PrimaryKey
+import io.realm.examples.kotlin.db.DbPerson
 
-// Your model has to extend RealmObject. Furthermore, the class and all of the
-// properties must be annotated with open (Kotlin classes and methods are final
-// by default).
-open class Person(
-        // You can put properties in the constructor as long as all of them are initialized with
-        // default values. This ensures that an empty constructor is generated.
-        // All properties are by default persisted.
-        // Properties can be annotated with PrimaryKey or Index.
-        // If you use non-nullable types, properties must be initialized with non-null values.
-        @PrimaryKey open var id: Long = 0,
+/**
+ * @author Pablo Manzano
+ * @since 01/12/16
+ */
 
-        open var name: String = "",
-
-        open var age: Int = 0,
-
-        // Other objects in a one-to-one relation must also subclass RealmObject
-        open var dog: Dog? = null,
-
-        // One-to-many relations is simply a RealmList of the objects which also subclass RealmObject
-        open var cats: RealmList<Cat> = RealmList(),
-
-        // You can instruct Realm to ignore a field and not persist it.
-        @Ignore open var tempReference: Int = 0
-
-) : RealmObject() {
-    // The Kotlin compiler generates standard getters and setters.
-    // Realm will overload them and code inside them is ignored.
-    // So if you prefer you can also just have empty abstract methods.
-
-    fun readyToSave(): Boolean {
-        return name.isNotEmpty() && age > 0
-    }
-
-    override fun toString(): String {
-        return "$name ($age) dog:$dog cats:${cats.joinToString(transform = Cat::toString, prefix = "[", postfix = "]")}"
-    }
-
-    fun log() {
-        for (prop in Person::class.java.declaredFields) {
-            println("${prop.name} = ${prop.get(this)} : ${prop.genericType} ${prop.type}")
-        }
+data class Person(val name: String = "", val age: Int = 0) {
+    fun toPerson(): DbPerson {
+        return convertTo(Person::class.java, DbPerson::class.java)
     }
 
 }

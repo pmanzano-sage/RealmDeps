@@ -1,4 +1,4 @@
-package io.realm.examples.kotlin.dto
+package io.realm.examples.kotlin.model
 
 import android.util.Log
 
@@ -6,12 +6,6 @@ import android.util.Log
  * @author Pablo Manzano
  * @since 01/12/16
  */
-
-fun DtoCat.log() {
-    for (prop in DtoCat::class.java.declaredFields) {
-        println("${prop.name} = ${prop.get(this)}")
-    }
-}
 
 fun <F, T> F.convertTo(fromClazz: Class<F>, toClazz: Class<T>): T {
     val instance = toClazz.getConstructor().newInstance()
@@ -39,5 +33,3 @@ fun <F, T> F.convertTo(fromClazz: Class<F>, toClazz: Class<T>): T {
     }
     return instance
 }
-
-
