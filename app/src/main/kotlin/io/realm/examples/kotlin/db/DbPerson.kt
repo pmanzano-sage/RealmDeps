@@ -20,6 +20,9 @@ import io.realm.RealmList
 import io.realm.RealmObject
 import io.realm.annotations.Ignore
 import io.realm.annotations.PrimaryKey
+import io.realm.examples.kotlin.mapper.Db
+import io.realm.examples.kotlin.mapper.convertToDto
+import io.realm.examples.kotlin.model.Person
 
 // Your model has to extend RealmObject. Furthermore, the class and all of the
 // properties must be annotated with open (Kotlin classes and methods are final
@@ -37,15 +40,15 @@ open class DbPerson(
         open var age: Int = 0,
 
         // Other objects in a one-to-one relation must also subclass RealmObject
-        open var dbDog: DbDog? = null,
+        open var dog: DbDog? = null,
 
         // One-to-many relations is simply a RealmList of the objects which also subclass RealmObject
-        open var dbCats: RealmList<DbCat> = RealmList(),
+        open var cats: RealmList<DbCat> = RealmList(),
 
         // You can instruct Realm to ignore a field and not persist it.
         @Ignore open var tempReference: Int = 0
 
-) : RealmObject() {
+) : RealmObject(), Db {
     // The Kotlin compiler generates standard getters and setters.
     // Realm will overload them and code inside them is ignored.
     // So if you prefer you can also just have empty abstract methods.
@@ -55,13 +58,20 @@ open class DbPerson(
     }
 
     override fun toString(): String {
-        return "$name ($age) dbDog:$dbDog dbCats:${dbCats.joinToString(transform = DbCat::toString, prefix = "[", postfix = "]")}"
+        return "DbPerson( id=$id, name=$name, age=$age, dog=$dog, cats=${cats.joinToString(transform = DbCat::toString, prefix = "[", postfix = "]")})"
     }
 
     fun log() {
+        println("DbPerson {")
         for (prop in DbPerson::class.java.declaredFields) {
-            println("${prop.name} = ${prop.get(this)} : ${prop.genericType} ${prop.type}")
+            println("\t${prop.name} = ${prop.get(this)} ")
         }
+        println("}")
     }
+
+    override fun toDto(): Person {
+        return convertToDto(DbPerson::class.java, Person::class.java)
+    }
+
 
 }

@@ -28,6 +28,8 @@ import io.realm.examples.kotlin.db.DbCat
 import io.realm.examples.kotlin.db.DbDog
 import io.realm.examples.kotlin.db.DbPerson
 import io.realm.examples.kotlin.model.Cat
+import io.realm.examples.kotlin.model.Dog
+import io.realm.examples.kotlin.model.Person
 import org.jetbrains.anko.async
 import org.jetbrains.anko.uiThread
 import kotlin.properties.Delegates
@@ -36,13 +38,18 @@ import kotlin.system.measureTimeMillis
 
 /**
  *
- * To Test
+ * To Do
  *
- * - Something has to be available to iterate over the properties without being very very expensive.
- * - Test something to get an immutable version of something stored in Realm. (copyFromRealm)
- * - Check if there is an rx operator to concat the execution of various lambdas. (for transactions)
+ * - Acabar el otro sentido DTO -> DB
+ * - Ignorar los atributos que haya que ignorar.
+ * - Mirar los tipos que usamos ahora en SageOne y ponermos todos.
+ * - Comparar tiempos de ejecución contra mappers picados a mano.
+ * - Usar copyFromRealm para asgurar que los objetos de Realm son unmanaged.
+ * - Pensar bien el tema de las dependencias que se deben borrar en cascada y cuales no.
+ *   Esto puede estar relacionado con el tema de buscar primero aquellos objetos que están incompletos.
  *
- * Verified
+ * Done
+ *
  * - You can create a model that doesn't have an id or primary key.
  * - When you delete items that belong to a list pointed by some other object, what happens?
  *   The list is directly updated.
@@ -61,10 +68,16 @@ class KotlinExampleActivity : Activity() {
     private var realm: Realm by Delegates.notNull()
 
     // Basic person to work with
-    val myDog = DbDog("Butcher")
-    val myCats = RealmList<DbCat>(DbCat("Michifus"), DbCat("Pepa"), DbCat("Flora"))
-    val me = DbPerson(1, "Pablo", 25, myDog, myCats)
+    val doggy = DbDog("doggy", 66)
+    val myDog = DbDog("Butcher", 9)
+    val myCats = RealmList<DbCat>(DbCat("Michifus", 1), DbCat("Pepa", 2, doggy), DbCat("Flora", 3))
+    val dbPerson = DbPerson(111, "Pablo", 35, myDog, myCats)
     val numPersons = 100
+
+    // Basic person model
+    val aDog = Dog("Spike", 5)
+    val someCats = arrayListOf(Cat("Moe"), Cat("Shemp"), Cat("Larry"))
+    val jake = Person(1, "Jake", 35, aDog, someCats)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -88,29 +101,46 @@ class KotlinExampleActivity : Activity() {
             realm.delete(DbCat::class.java)
         }
 
-        // Iteration over declared fields
-        val garfield = Cat("Garfield", 10)
-        garfield.log()
-        me.log()
+        // Automapping tests
+//        Log.w(TAG, "-------------- AUTOMAPPING DTO -> DB --------------")
+//        val garfield = Cat("Garfield", 10)
+//        garfield.log()
+//        val dbCat = garfield.toDb()
+//        Log.w(TAG, "Look this nice DbCat: $dbCat")
+//
+//        val dbJake = jake.toDb()
+//        Log.w(TAG, "The master in db: $dbJake")
+//        dbJake.log()
+//        Log.w(TAG, "-------------- AUTOMAPPING DTO -> DB --------------")
+
 
         // Automapping tests
-        val dbCat = garfield.toDbCat()
-        Log.w(TAG, "Look this nice DbCat: $dbCat")
+        Log.w(TAG, "-------------- AUTOMAPPING DB -> DTO --------------")
+//        val dbGarfield = DbCat("Garfield", 10)
+//        dbGarfield.log()
+//        val garfieldDto = dbGarfield.toDto()
+//        Log.w(TAG, "Garfield: $garfieldDto")
 
-        basicCRUD(realm)
-        deleteItemFromList(realm)
-        deleteListOwner(realm)
-        twoItemsPointingToTheSameDep(realm)
+        Log.w(TAG, "$dbPerson")
+        val dtoPerson = dbPerson.toDto()
+        Log.w(TAG, "$dtoPerson")
+        // dtoPerson.log()
+        Log.w(TAG, "-------------- AUTOMAPPING DB -> DTO --------------")
 
-        // Transactions' speed
-        testMultipleTransactions(realm)
-        testSingleTransaction(realm)
+//        basicCRUD(realm)
+//        deleteItemFromList(realm)
+//        deleteListOwner(realm)
+//        twoItemsPointingToTheSameDep(realm)
+//
+//        // Transactions' speed
+//        testMultipleTransactions(realm)
+//        testSingleTransaction(realm)
 
         // Getting something out of Realm
-        testCopyFromRealm(realm)
+//        testCopyFromRealm(realm)
 
-        basicQuery(realm)
-        basicLinkQuery(realm)
+//        basicQuery(realm)
+//        basicLinkQuery(realm)
 
 
         // More complex operations can be executed on another thread, for example using
@@ -140,8 +170,8 @@ class KotlinExampleActivity : Activity() {
 
 
     /**
-     * - New dbDog "Cockie"
-     * - Two persons having the SAME dbDog
+     * - New dog "Cockie"
+     * - Two persons having the SAME dog
      */
     private fun twoItemsPointingToTheSameDep(realm: Realm) {
         showStatus("twoItemsPointingToTheSameDep...")
@@ -165,10 +195,10 @@ class KotlinExampleActivity : Activity() {
             val person = realm.where(DbPerson::class.java).equalTo("id", 567).findFirst()
             person.deleteFromRealm()
         }
-        // If the associated dbCats are deleted with the person, this count should be 2, otherwise it
+        // If the associated cats are deleted with the person, this count should be 2, otherwise it
         // will be 4.
         val numCats = realm.where(DbCat::class.java).findAll().count()
-        showStatus("#dbCats=$numCats")
+        showStatus("#cats=$numCats")
     }
 
 
@@ -180,16 +210,16 @@ class KotlinExampleActivity : Activity() {
             numCats = cats.count()
             cats.deleteAllFromRealm()
         }
-        showStatus("$numCats dbCats deleted")
+        showStatus("$numCats cats deleted")
     }
 
     private fun testMultipleTransactions(realm: Realm) {
         val offset = 1000L
         val millis = measureTimeMillis {
             for (i in 1..numPersons) {
-                me.id = offset + i.toLong()
+                dbPerson.id = offset + i.toLong()
                 realm.executeTransaction {
-                    realm.copyToRealmOrUpdate(me)
+                    realm.copyToRealmOrUpdate(dbPerson)
                 }
             }
         }
@@ -201,8 +231,8 @@ class KotlinExampleActivity : Activity() {
         val millis = measureTimeMillis {
             realm.executeTransaction {
                 for (i in 1..numPersons) {
-                    me.id = offset + i.toLong()
-                    realm.copyToRealmOrUpdate(me)
+                    dbPerson.id = offset + i.toLong()
+                    realm.copyToRealmOrUpdate(dbPerson)
                 }
             }
         }
@@ -220,8 +250,8 @@ class KotlinExampleActivity : Activity() {
                 showStatus("testCopyFromRealm: $myself")
                 // showStatus("testCopyFromRealm: ${myself.shortName()}")
                 val man1 = myself.isManaged
-                val man2 = myself.dbCats.isManaged
-                val man3 = myself.dbCats.get(0).isManaged
+                val man2 = myself.cats.isManaged
+                val man3 = myself.cats.get(0).isManaged
                 showStatus("testCopyFromRealm: $man1 $man2 $man3")
             } else {
                 showStatus("testCopyFromRealm: could not find person 1100")
@@ -242,8 +272,8 @@ class KotlinExampleActivity : Activity() {
 
             // Another option is create the person with an empty list associated, and then
             // get the list, clear it, and add all the items.
-            // p1.dbCats.clear()
-            // p1.dbCats.addAll(dbCats)
+            // p1.cats.clear()
+            // p1.cats.addAll(cats)
 
             Log.d(TAG, "PERSON= ${p1.hashCode()}")
 
@@ -279,7 +309,7 @@ class KotlinExampleActivity : Activity() {
         showStatus("\nPerforming basic Link Query operation...")
         showStatus("Number of persons: ${realm.where(DbPerson::class.java).count()}")
 
-        val results = realm.where(DbPerson::class.java).equalTo("dbCats.name", "Tiger").findAll()
+        val results = realm.where(DbPerson::class.java).equalTo("cats.name", "Tiger").findAll()
 
         showStatus("Size of result set: ${results.size}")
     }
@@ -300,7 +330,7 @@ class KotlinExampleActivity : Activity() {
                 person.id = i.toLong()
                 person.name = "DbPerson no. $i"
                 person.age = i
-                person.dbDog = fido
+                person.dog = fido
 
                 // The field tempReference is annotated with @Ignore.
                 // This means setTempReference sets the DbPerson tempReference
@@ -311,7 +341,7 @@ class KotlinExampleActivity : Activity() {
                 for (j in 0..i - 1) {
                     val cat = realm.createObject(DbCat::class.java)
                     cat.name = "Cat_$j"
-                    person.dbCats.add(cat)
+                    person.cats.add(cat)
                 }
             }
         }
@@ -321,9 +351,9 @@ class KotlinExampleActivity : Activity() {
 
         // Iterate over all objects
         for (person in realm.where(DbPerson::class.java).findAll()) {
-            val dogName: String = person?.dbDog?.name ?: "None"
+            val dogName: String = person?.dog?.name ?: "None"
 
-            status += "\n${person.name}: ${person.age} : $dogName : ${person.dbCats.size}"
+            status += "\n${person.name}: ${person.age} : $dogName : ${person.cats.size}"
 
             // The field tempReference is annotated with @Ignore
             // Though we initially set its value to 42, it has

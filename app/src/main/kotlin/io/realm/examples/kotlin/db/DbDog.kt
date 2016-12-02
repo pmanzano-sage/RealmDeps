@@ -17,9 +17,17 @@
 package io.realm.examples.kotlin.db
 
 import io.realm.RealmObject
+import io.realm.examples.kotlin.mapper.Db
+import io.realm.examples.kotlin.mapper.convertToDto
+import io.realm.examples.kotlin.model.Dog
 
-open class DbDog(open var name: String = "") : RealmObject() {
+open class DbDog(open var name: String = "", open var age: Int = 0) : RealmObject(), Db {
     override fun toString(): String {
-        return name
+        return "DbDog(name=$name, age=$age)"
     }
+
+    override fun toDto(): Dog {
+        return convertToDto(DbDog::class.java, Dog::class.java)
+    }
+
 }

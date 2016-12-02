@@ -17,16 +17,25 @@
 package io.realm.examples.kotlin.db
 
 import io.realm.RealmObject
+import io.realm.examples.kotlin.mapper.Db
+import io.realm.examples.kotlin.mapper.convertToDto
+import io.realm.examples.kotlin.model.Cat
 
-open class DbCat(open var name: String = "", open var age: Int = 0) : RealmObject() {
+open class DbCat(open var name: String = "", open var age: Int = 0, var dog: DbDog? = null) : RealmObject(), Db {
     override fun toString(): String {
-        return "$name $age"
+        return "DbCat(name=$name, age=$age, dog=$dog)"
     }
 
     fun log() {
+        println("DbCat {")
         for (prop in DbCat::class.java.declaredFields) {
-            println("${prop.name} = ${prop.get(this)}")
+            println("\t${prop.name} = ${prop.get(this)}")
         }
+        println("}")
+    }
+
+    override fun toDto(): Cat {
+        return convertToDto(DbCat::class.java, Cat::class.java)
     }
 
 }
