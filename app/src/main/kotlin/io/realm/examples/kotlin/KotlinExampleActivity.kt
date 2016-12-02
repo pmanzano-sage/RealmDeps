@@ -92,9 +92,10 @@ class KotlinExampleActivity : Activity() {
         val dto = DtoCat("dto", 10)
         dto.log()
         me.log()
+
+        // Automapping tests
         val cat = dto.toCat()
         Log.w(TAG, "GATO!!: $cat")
-
 
         basicCRUD(realm)
         deleteItemFromList(realm)
