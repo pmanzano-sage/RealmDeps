@@ -26,6 +26,10 @@ fun <F, T> F.convertToDb(fromClazz: Class<F>, toClazz: Class<T>): T {
         try {
             val methodName = "set${field.name.capitalize()}"
             val type = field.type
+
+            val targetField = toClazz.getDeclaredField(field.name)
+            targetField.isAccessible = true
+
             when {
                 type == String::class.java -> {
                     val setMethod = toClazz.getDeclaredMethod(methodName, String::class.java)
@@ -35,17 +39,27 @@ fun <F, T> F.convertToDb(fromClazz: Class<F>, toClazz: Class<T>): T {
                     val setMethod = toClazz.getDeclaredMethod(methodName, Int::class.java)
                     setMethod.invoke(instance, field.get(this))
                 }
+                type == Long::class.java -> {
+                    val setMethod = toClazz.getDeclaredMethod(methodName, Long::class.java)
+                    setMethod.invoke(instance, field.get(this))
+                }
                 type == Double::class.java -> {
                     val setMethod = toClazz.getDeclaredMethod(methodName, Double::class.java)
                     setMethod.invoke(instance, field.get(this))
                 }
-                isDbObject(type) -> {
-                    // TODO
-                    Log.w(TAG, "Pending mapping for ${type.name} in $toClazz")
+                Dto::class.java.isAssignableFrom(type) -> {
+                    // Get the object from the source field, and convert it to DTO.
+                    val dtoObject = field.get(this) as? Dto
+                    // Set the Db object to the target field
+                    dtoObject?.toDb().let { targetField.set(instance, it) }
                 }
-                isDbList(type) -> {
-                    // TODO
-                    Log.w(TAG, "Pending mapping for ${type.name} in $toClazz")
+                type.name.equals("java.util.List") -> {
+                    // Get the list from the source field
+                    val list = field.get(this) as List<*>
+                    val dbList = RealmList<RealmModel>()
+                    list.map { it as Dto }.mapTo(dbList) { it.toDb() }
+                    // Set the DTO list to the target field
+                    targetField.set(instance, dbList)
                 }
                 else -> Log.e(TAG, "Type '${type.name}' not mapped in '$toClazz'")
             }
@@ -70,6 +84,7 @@ fun <F, T> F.convertToDto(fromClazz: Class<in F>, toClazz: Class<out T>): T {
         field.isAccessible = true
         try {
             val type = field.type
+
             val targetField = toClazz.getDeclaredField(field.name)
             targetField.isAccessible = true
 

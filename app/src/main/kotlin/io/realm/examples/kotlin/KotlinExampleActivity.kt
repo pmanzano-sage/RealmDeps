@@ -40,6 +40,7 @@ import kotlin.system.measureTimeMillis
  *
  * To Do
  *
+ * - Agregar soporte para Date y Boolean.
  * - Acabar el otro sentido DTO -> DB
  * - Ignorar los atributos que haya que ignorar.
  * - Mirar los tipos que usamos ahora en SageOne y ponermos todos.
@@ -76,7 +77,7 @@ class KotlinExampleActivity : Activity() {
 
     // Basic person model
     val aDog = Dog("Spike", 5)
-    val someCats = arrayListOf(Cat("Moe"), Cat("Shemp"), Cat("Larry"))
+    val someCats = arrayListOf(Cat("Moe", 4), Cat("Shemp", 5, aDog), Cat("Larry", 6))
     val jake = Person(1, "Jake", 35, aDog, someCats)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -102,30 +103,19 @@ class KotlinExampleActivity : Activity() {
         }
 
         // Automapping tests
-//        Log.w(TAG, "-------------- AUTOMAPPING DTO -> DB --------------")
-//        val garfield = Cat("Garfield", 10)
-//        garfield.log()
-//        val dbCat = garfield.toDb()
-//        Log.w(TAG, "Look this nice DbCat: $dbCat")
-//
-//        val dbJake = jake.toDb()
-//        Log.w(TAG, "The master in db: $dbJake")
-//        dbJake.log()
-//        Log.w(TAG, "-------------- AUTOMAPPING DTO -> DB --------------")
+        Log.w(TAG, "-------------- AUTOMAPPING DTO -> DB --------------")
+        Log.w(TAG, "$jake")
+        val dbJake = jake.toDb()
+        Log.w(TAG, "$dbJake")
+        Log.w(TAG, "-------------- AUTOMAPPING DTO -> DB --------------")
 
 
         // Automapping tests
-        Log.w(TAG, "-------------- AUTOMAPPING DB -> DTO --------------")
-//        val dbGarfield = DbCat("Garfield", 10)
-//        dbGarfield.log()
-//        val garfieldDto = dbGarfield.toDto()
-//        Log.w(TAG, "Garfield: $garfieldDto")
-
-        Log.w(TAG, "$dbPerson")
-        val dtoPerson = dbPerson.toDto()
-        Log.w(TAG, "$dtoPerson")
-        // dtoPerson.log()
-        Log.w(TAG, "-------------- AUTOMAPPING DB -> DTO --------------")
+//        Log.w(TAG, "-------------- AUTOMAPPING DB -> DTO --------------")
+//        Log.w(TAG, "$dbPerson")
+//        val dtoPerson = dbPerson.toDto()
+//        Log.w(TAG, "$dtoPerson")
+//        Log.w(TAG, "-------------- AUTOMAPPING DB -> DTO --------------")
 
 //        basicCRUD(realm)
 //        deleteItemFromList(realm)
