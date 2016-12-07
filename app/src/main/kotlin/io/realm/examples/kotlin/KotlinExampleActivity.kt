@@ -40,17 +40,15 @@ import kotlin.system.measureTimeMillis
  *
  * To Do
  *
- * - Agregar soporte para Date y Boolean.
- * - Acabar el otro sentido DTO -> DB
- * - Ignorar los atributos que haya que ignorar.
- * - Mirar los tipos que usamos ahora en SageOne y ponermos todos.
- * - Comparar tiempos de ejecución contra mappers picados a mano.
- * - Usar copyFromRealm para asgurar que los objetos de Realm son unmanaged.
+ * - Add Date & Boolean support.
+ * - Compare execution times against non-reflection mappers.
+ * - Use copyFromRealm to ensure that we work with unmanaged entities.
  * - Pensar bien el tema de las dependencias que se deben borrar en cascada y cuales no.
  *   Esto puede estar relacionado con el tema de buscar primero aquellos objetos que están incompletos.
  *
  * Done
  *
+ * - Can not ignore attributes from Realm cause retention type is CLASS and not RUNTIME.
  * - You can create a model that doesn't have an id or primary key.
  * - When you delete items that belong to a list pointed by some other object, what happens?
  *   The list is directly updated.
@@ -103,19 +101,19 @@ class KotlinExampleActivity : Activity() {
         }
 
         // Automapping tests
-        Log.w(TAG, "-------------- AUTOMAPPING DTO -> DB --------------")
-        Log.w(TAG, "$jake")
-        val dbJake = jake.toDb()
-        Log.w(TAG, "$dbJake")
-        Log.w(TAG, "-------------- AUTOMAPPING DTO -> DB --------------")
+//        Log.w(TAG, "-------------- AUTOMAPPING DTO -> DB --------------")
+//        Log.w(TAG, "$jake")
+//        val dbJake = jake.toDb()
+//        Log.w(TAG, "$dbJake")
+//        Log.w(TAG, "-------------- AUTOMAPPING DTO -> DB --------------")
 
 
         // Automapping tests
-//        Log.w(TAG, "-------------- AUTOMAPPING DB -> DTO --------------")
-//        Log.w(TAG, "$dbPerson")
-//        val dtoPerson = dbPerson.toDto()
-//        Log.w(TAG, "$dtoPerson")
-//        Log.w(TAG, "-------------- AUTOMAPPING DB -> DTO --------------")
+        Log.w(TAG, "-------------- AUTOMAPPING DB -> DTO --------------")
+        Log.w(TAG, "$dbPerson")
+        val dtoPerson = dbPerson.toDto()
+        Log.w(TAG, "$dtoPerson")
+        Log.w(TAG, "-------------- AUTOMAPPING DB -> DTO --------------")
 
 //        basicCRUD(realm)
 //        deleteItemFromList(realm)
