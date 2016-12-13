@@ -23,15 +23,16 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import io.realm.Realm
 import io.realm.RealmList
+import io.realm.RealmObject
 import io.realm.Sort
 import io.realm.examples.kotlin.db.DbCat
 import io.realm.examples.kotlin.db.DbDog
 import io.realm.examples.kotlin.db.DbPerson
+import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.model.Cat
 import io.realm.examples.kotlin.model.Dog
 import io.realm.examples.kotlin.model.Person
-import org.jetbrains.anko.async
-import org.jetbrains.anko.uiThread
+import io.realm.exceptions.RealmPrimaryKeyConstraintException
 import kotlin.properties.Delegates
 import kotlin.system.measureTimeMillis
 
@@ -40,8 +41,9 @@ import kotlin.system.measureTimeMillis
  *
  * To Do
  *
+ *
+ *
  * - Add Date & Boolean support.
- * - Compare execution times against non-reflection mappers.
  * - Use copyFromRealm to ensure that we work with unmanaged entities.
  * - Pensar bien el tema de las dependencias que se deben borrar en cascada y cuales no.
  *   Esto puede estar relacionado con el tema de buscar primero aquellos objetos que están incompletos.
@@ -66,17 +68,22 @@ class KotlinExampleActivity : Activity() {
     private var rootLayout: LinearLayout by Delegates.notNull()
     private var realm: Realm by Delegates.notNull()
 
+    private var dataManager: DataManager by Delegates.notNull()
+
     // Basic person to work with
     val doggy = DbDog("doggy", 66)
     val myDog = DbDog("Butcher", 9)
-    val myCats = RealmList<DbCat>(DbCat("Michifus", 1), DbCat("Pepa", 2, doggy), DbCat("Flora", 3))
-    val dbPerson = DbPerson(111, "Pablo", 35, myDog, myCats)
+    val myCats = RealmList<DbCat>(DbCat("Michifus", 1, null), DbCat("Pepa", 2, doggy), DbCat("Flora", 3, null))
+    val dbPerson = DbPerson("111", SyncStatus.SYNC_SUCCESS.ordinal, "Pablo", 35, myDog, myCats)
     val numPersons = 100
 
     // Basic person model
     val aDog = Dog("Spike", 5)
-    val someCats = arrayListOf(Cat("Moe", 4), Cat("Shemp", 5, aDog), Cat("Larry", 6))
-    val jake = Person(1, "Jake", 35, aDog, someCats)
+    val someCats = arrayListOf(Cat("Moe", 4, null), Cat("Shemp", 5, aDog), Cat("Larry", 6, null))
+    val jake = Person("1", SyncStatus.SYNC_ERROR, "Jake", 34, aDog, someCats)
+
+    // Some entities from One
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -90,6 +97,8 @@ class KotlinExampleActivity : Activity() {
 
         // Open the realm for the UI thread.
         realm = Realm.getDefaultInstance()
+
+        dataManager = DataManager(realm)
 
         // Delete all persons
         // Using executeTransaction with a lambda reduces code size and makes it impossible
@@ -107,15 +116,18 @@ class KotlinExampleActivity : Activity() {
 //        Log.w(TAG, "$dbJake")
 //        Log.w(TAG, "-------------- AUTOMAPPING DTO -> DB --------------")
 
+        dataManagerTest()
 
         // Automapping tests
-        Log.w(TAG, "-------------- AUTOMAPPING DB -> DTO --------------")
-        Log.w(TAG, "$dbPerson")
-        val dtoPerson = dbPerson.toDto()
-        Log.w(TAG, "$dtoPerson")
-        Log.w(TAG, "-------------- AUTOMAPPING DB -> DTO --------------")
+//        Log.w(TAG, "-------------- AUTOMAPPING DB -> DTO --------------")
+//        Log.w(TAG, "$dbPerson")
+//        val dtoPerson = dbPerson.toDto()
+//        Log.w(TAG, "$dtoPerson")
+//        Log.w(TAG, "-------------- AUTOMAPPING DB -> DTO --------------")
 
-//        basicCRUD(realm)
+        // attemptToCreateInvalidPerson(realm)
+
+        // basicCRUD(realm)
 //        deleteItemFromList(realm)
 //        deleteListOwner(realm)
 //        twoItemsPointingToTheSameDep(realm)
@@ -133,15 +145,37 @@ class KotlinExampleActivity : Activity() {
 
         // More complex operations can be executed on another thread, for example using
         // Anko's async extension method.
-        async() {
-            var info: String
-            info = complexReadWrite()
-            info += complexQuery()
+//        async() {
+//            var info: String
+//            info = complexReadWrite()
+//            info += complexQuery()
+//
+//            uiThread {
+//                showStatus(info)
+//            }
+//        }
+    }
 
-            uiThread {
-                showStatus(info)
-            }
+    private fun dataManagerTest() {
+        try {
+            var ok = false
+
+//            ok = dataManager.update(jake)
+//            showStatus("Jake updated: $ok")
+
+            ok = dataManager.create(jake)
+            showStatus("Jake created: $ok")
+
+            ok = dataManager.delete(aDog)
+            showStatus("Spike deleted: $ok")
+
+            val jake2 = dataManager.find(Person::class.java, jake.id)
+            showStatus("Jake2: $jake2")
+
+        } catch (e: Exception) {
+            showStatus("${e.message}")
         }
+
     }
 
     override fun onDestroy() {
@@ -157,6 +191,26 @@ class KotlinExampleActivity : Activity() {
     }
 
 
+    private fun attemptToCreateInvalidPerson(realm: Realm) {
+        showStatus("Attempt to create invalid person...")
+        val personName = "J"
+        val dog = DbDog("")
+        val cats = RealmList<DbCat>(DbCat("Michifus", 1, null), DbCat("", 2, doggy), DbCat("Flora", 3, null))
+        val p1 = DbPerson("666", SyncStatus.getDefault().ordinal, personName, 20, dog, cats)
+
+        if (p1.readyToSave()) {
+            realm.executeTransaction {
+                realm.copyToRealmOrUpdate(p1)
+            }
+        } else {
+            showStatus("sorry invalid person")
+        }
+        val numPersons = realm.where(DbPerson::class.java).equalTo("name", personName).findAll().count()
+        showStatus("#persons=$numPersons")
+
+    }
+
+
     /**
      * - New dog "Cockie"
      * - Two persons having the SAME dog
@@ -166,11 +220,11 @@ class KotlinExampleActivity : Activity() {
         val dogName = "Cockie"
         realm.executeTransaction {
             val dog = DbDog(dogName)
-            val p1 = DbPerson(789, "Pedro", 20, dog)
+            val p1 = DbPerson("789", SyncStatus.getDefault().ordinal, "Pedro", 20, dog)
             realm.copyToRealmOrUpdate(p1)
 
             val cockie = realm.where(DbDog::class.java).equalTo("name", dogName).findFirst()
-            val p2 = DbPerson(790, "Jose", 20, cockie)
+            val p2 = DbPerson("790", SyncStatus.getDefault().ordinal, "Jose", 20, cockie)
             realm.copyToRealmOrUpdate(p2)
         }
         val numCockies = realm.where(DbDog::class.java).equalTo("name", dogName).findAll().count()
@@ -181,7 +235,7 @@ class KotlinExampleActivity : Activity() {
         showStatus("deleteListOwner...")
         realm.executeTransaction {
             val person = realm.where(DbPerson::class.java).equalTo("id", 567).findFirst()
-            person.deleteFromRealm()
+            RealmObject.deleteFromRealm(person)
         }
         // If the associated cats are deleted with the person, this count should be 2, otherwise it
         // will be 4.
@@ -202,10 +256,8 @@ class KotlinExampleActivity : Activity() {
     }
 
     private fun testMultipleTransactions(realm: Realm) {
-        val offset = 1000L
         val millis = measureTimeMillis {
             for (i in 1..numPersons) {
-                dbPerson.id = offset + i.toLong()
                 realm.executeTransaction {
                     realm.copyToRealmOrUpdate(dbPerson)
                 }
@@ -215,11 +267,9 @@ class KotlinExampleActivity : Activity() {
     }
 
     private fun testSingleTransaction(realm: Realm) {
-        val offset = 2000L
         val millis = measureTimeMillis {
             realm.executeTransaction {
                 for (i in 1..numPersons) {
-                    dbPerson.id = offset + i.toLong()
                     realm.copyToRealmOrUpdate(dbPerson)
                 }
             }
@@ -237,9 +287,9 @@ class KotlinExampleActivity : Activity() {
                 val myself = realm.copyFromRealm(someone)
                 showStatus("testCopyFromRealm: $myself")
                 // showStatus("testCopyFromRealm: ${myself.shortName()}")
-                val man1 = myself.isManaged
+                val man1 = RealmObject.isManaged(myself)
                 val man2 = myself.cats.isManaged
-                val man3 = myself.cats.get(0).isManaged
+                val man3 = RealmObject.isManaged(myself.cats.get(0))
                 showStatus("testCopyFromRealm: $man1 $man2 $man3")
             } else {
                 showStatus("testCopyFromRealm: could not find person 1100")
@@ -252,11 +302,13 @@ class KotlinExampleActivity : Activity() {
 
         // All writes must be wrapped in a transaction to facilitate safe multi threading
         realm.executeTransaction {
-            val dog = DbDog("Butcher")
-            val cats = arrayOf(DbCat("michifus"), DbCat("Pepa"), DbCat("Flora"))
+            val dog = DbDog("Butcher", 99)
+            val lacie = DbDog("Lacie", 5)
+            val dog33 = DbDog("33", SyncStatus.NEEDS_SYNC_CREATE.ordinal, "Dog33", 33)
+            val cats = arrayOf(DbCat("michifus", 88, dog33), DbCat("Pepa", 77, lacie), DbCat("Flora", 66, dog))
             val rcats = RealmList<DbCat>()
             rcats.addAll(cats)
-            val p1 = DbPerson(1234, "Juan", 15, dog, rcats)
+            val p1 = DbPerson("567", SyncStatus.SYNC_SUCCESS.ordinal, "Juan", 15, dog, rcats)
 
             // Another option is create the person with an empty list associated, and then
             // get the list, clear it, and add all the items.
@@ -264,24 +316,57 @@ class KotlinExampleActivity : Activity() {
             // p1.cats.addAll(cats)
 
             Log.d(TAG, "PERSON= ${p1.hashCode()}")
-
             realm.copyToRealmOrUpdate(p1)
 
-            val p2 = DbPerson(567, "Juan", 15, dog, rcats)
-            realm.copyToRealmOrUpdate(p2)
+            try {
+                val p2 = DbPerson("567", SyncStatus.SYNC_SUCCESS.ordinal, "Pedro", 25, lacie, RealmList<DbCat>())
+                realm.copyToRealm(p2)
+                // realm.copyToRealmOrUpdate(p2)
+            } catch (e: RealmPrimaryKeyConstraintException) {
+                showStatus("${e.message}")
+            }
 
         }
 
         // Find the first person (no query conditions) and read a field
-        val person = realm.where(DbPerson::class.java).findFirst()
-        showStatus(person.name + ": " + person.age)
+        val person = realm.where(DbPerson::class.java).equalTo("age", 25).findFirst()
+        if (person != null) {
+            showStatus(person.name + " found.  age=" + person.age)
 
-        // Update person in a transaction
-        realm.executeTransaction {
-            person.name = "Senior DbPerson"
-            person.age = 99
-            showStatus(person.name + " got older: " + person.age)
+            // Update person in a transaction
+            realm.executeTransaction {
+                person.name = "Peter"
+                person.age = 99
+                showStatus(person.name + " got older: " + person.age)
+            }
+
         }
+
+        // Look for a person that has a certain dog
+        realm.executeTransaction {
+            val myperson = realm.where(DbPerson::class.java).equalTo("dog.name", "Lacie").findFirst()
+            if (myperson != null) {
+                myperson.age = 55
+                showStatus(myperson.name + " is now " + myperson.age)
+            } else {
+                showStatus("No person found with a dog called Lacie")
+            }
+        }
+
+
+        // Check if we can look for the bigest id in a table.
+//        realm.executeTransaction {
+//            val maxId: Number
+//            maxId = realm.where(DbPerson::class.java).max("id")
+//            val nextID: Long
+//            if (maxId == null) {
+//                nextID = 1
+//            } else {
+//                nextID = maxId.toLong() + 1
+//            }
+//            val another = realm.createObject(DbPerson::class.java, nextID)
+//        }
+
     }
 
     private fun basicQuery(realm: Realm) {
@@ -315,7 +400,7 @@ class KotlinExampleActivity : Activity() {
             fido.name = "fido"
             for (i in 0..9) {
                 val person = realm.createObject(DbPerson::class.java)
-                person.id = i.toLong()
+                // person.id = i.toString()
                 person.name = "DbPerson no. $i"
                 person.age = i
                 person.dog = fido

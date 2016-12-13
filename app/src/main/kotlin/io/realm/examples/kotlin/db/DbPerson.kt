@@ -20,8 +20,12 @@ import io.realm.RealmList
 import io.realm.RealmObject
 import io.realm.annotations.Ignore
 import io.realm.annotations.PrimaryKey
+import io.realm.annotations.Required
+import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.mapper.Db
+import io.realm.examples.kotlin.mapper.Exclusive
 import io.realm.examples.kotlin.mapper.convertToDto
+import io.realm.examples.kotlin.mapper.generateId
 import io.realm.examples.kotlin.model.Person
 
 // Your model has to extend RealmObject. Furthermore, the class and all of the
@@ -33,16 +37,20 @@ open class DbPerson(
         // All properties are by default persisted.
         // Properties can be annotated with PrimaryKey or Index.
         // If you use non-nullable types, properties must be initialized with non-null values.
-        @PrimaryKey open var id: Long = 0,
+        @PrimaryKey @Required override var id: String = generateId(),
+
+        override var sync: Int = SyncStatus.getDefault().ordinal,
 
         open var name: String = "",
 
         open var age: Int = 0,
 
         // Other objects in a one-to-one relation must also subclass RealmObject
+        @field:Exclusive
         open var dog: DbDog? = null,
 
         // One-to-many relations is simply a RealmList of the objects which also subclass RealmObject
+        @field:Exclusive
         open var cats: RealmList<DbCat> = RealmList(),
 
         // You can instruct Realm to ignore a field and not persist it.
@@ -53,12 +61,28 @@ open class DbPerson(
     // Realm will overload them and code inside them is ignored.
     // So if you prefer you can also just have empty abstract methods.
 
-    fun readyToSave(): Boolean {
-        return name.isNotEmpty() && age > 0
+    constructor(name: String, age: Int, dog: DbDog?, cats: RealmList<DbCat>) : this(
+            id = generateId(),
+            sync = SyncStatus.getDefault().ordinal,
+            name = name,
+            age = age,
+            dog = dog,
+            cats = cats)
+
+    override fun getDtoClass(): Class<out Person> {
+        return Person::class.java
+    }
+
+    override fun readyToSave(): Boolean {
+        return name.isNotEmpty() && (dog == null || dog!!.readyToSave()) && cats.fold(true) { ready, next -> ready && next.readyToSave() }
     }
 
     override fun toString(): String {
         return "DbPerson( id=$id, name=$name, age=$age, dog=$dog, cats=${cats.joinToString(transform = DbCat::toString, prefix = "[", postfix = "]")})"
+    }
+
+    override fun toDto(): Person {
+        return convertToDto(DbPerson::class.java, getDtoClass())
     }
 
     fun log() {
@@ -68,10 +92,5 @@ open class DbPerson(
         }
         println("}")
     }
-
-    override fun toDto(): Person {
-        return convertToDto(DbPerson::class.java, Person::class.java)
-    }
-
 
 }

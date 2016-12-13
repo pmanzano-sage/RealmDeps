@@ -17,13 +17,47 @@
 package io.realm.examples.kotlin.db
 
 import io.realm.RealmObject
+import io.realm.annotations.PrimaryKey
+import io.realm.annotations.Required
+import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.mapper.Db
+import io.realm.examples.kotlin.mapper.Exclusive
 import io.realm.examples.kotlin.mapper.convertToDto
+import io.realm.examples.kotlin.mapper.generateId
 import io.realm.examples.kotlin.model.Cat
 
-open class DbCat(open var name: String = "", open var age: Int = 0, var dog: DbDog? = null) : RealmObject(), Db {
+open class DbCat(
+        @PrimaryKey @Required override var id: String = generateId(),
+        override var sync: Int = SyncStatus.getDefault().ordinal,
+        open var name: String = "",
+        open var age: Int = 0,
+        // When a dependency is marked as @Exclusive, its id must be generated based on the parent id.
+        @Exclusive var dog: DbDog? = null
+) : RealmObject(), Db {
+
+    // If client code does not provide an id, a random one is generated.
+    constructor(name: String, age: Int, dog: DbDog?) : this(
+            generateId(),
+            sync = SyncStatus.getDefault().ordinal,
+            name = name,
+            age = age,
+            dog = dog
+    )
+
+    override fun getDtoClass(): Class<out Cat> {
+        return Cat::class.java
+    }
+
+    override fun readyToSave(): Boolean {
+        return name.isNotEmpty() && (dog == null || dog!!.readyToSave())
+    }
+
     override fun toString(): String {
         return "DbCat(name=$name, age=$age, dog=$dog)"
+    }
+
+    override fun toDto(): Cat {
+        return convertToDto(DbCat::class.java, getDtoClass())
     }
 
     fun log() {
@@ -32,10 +66,6 @@ open class DbCat(open var name: String = "", open var age: Int = 0, var dog: DbD
             println("\t${prop.name} = ${prop.get(this)}")
         }
         println("}")
-    }
-
-    override fun toDto(): Cat {
-        return convertToDto(DbCat::class.java, Cat::class.java)
     }
 
 }

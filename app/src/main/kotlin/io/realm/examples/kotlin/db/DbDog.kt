@@ -17,17 +17,43 @@
 package io.realm.examples.kotlin.db
 
 import io.realm.RealmObject
+import io.realm.annotations.PrimaryKey
+import io.realm.annotations.Required
+import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.mapper.Db
 import io.realm.examples.kotlin.mapper.convertToDto
+import io.realm.examples.kotlin.mapper.generateId
 import io.realm.examples.kotlin.model.Dog
 
-open class DbDog(open var name: String = "", open var age: Int = 0) : RealmObject(), Db {
+open class DbDog(
+        @PrimaryKey @Required override var id: String = generateId(),
+        override var sync: Int = SyncStatus.getDefault().ordinal,
+        open var name: String = "",
+        open var age: Int = 0
+) : RealmObject(), Db {
+
+    // If client code does not provide an id, a random one is generated.
+    constructor(name: String, age: Int) : this(
+            generateId(),
+            sync = SyncStatus.getDefault().ordinal,
+            name = name,
+            age = age
+    )
+
+    override fun getDtoClass(): Class<out Dog> {
+        return Dog::class.java
+    }
+
+    override fun readyToSave(): Boolean {
+        return name.isNotEmpty()
+    }
+
     override fun toString(): String {
         return "DbDog(name=$name, age=$age)"
     }
 
     override fun toDto(): Dog {
-        return convertToDto(DbDog::class.java, Dog::class.java)
+        return convertToDto(DbDog::class.java, getDtoClass())
     }
 
 }
