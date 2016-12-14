@@ -15,12 +15,10 @@ data class Payment(
         override var sync: SyncStatus = SyncStatus.getDefault(),
 
         val reference: String = "",
+        val amount: Double = 0.0,
+        val currencyCode: String = "",
 
-        val amount: Double,
-
-        val currencyCode: String,
-
-        val date: String,
+        val date: String = "",
         var account: Account? = null,
 
         var parentId: String = "") : Dto {
