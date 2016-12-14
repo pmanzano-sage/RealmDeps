@@ -29,8 +29,14 @@ data class Payment(
         return RealmPayment::class.java
     }
 
-    override fun isValid(): Boolean {
-        return true
+    override fun checkValid(): Dto {
+        if (reference.isBlank()) {
+            throw IllegalArgumentException("Payment reference can not be blank!\nOffending instance:\n${this}")
+        }
+        if (!Amount.isCurrencyCodeValid(currencyCode)) {
+            throw IllegalArgumentException("Payment currency code is not supported!\nOffending instance:\n${this}")
+        }
+        return this
     }
 
     override fun toDb(): RealmPayment {

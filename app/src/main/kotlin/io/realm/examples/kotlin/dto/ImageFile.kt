@@ -30,8 +30,8 @@ data class ImageFile(
     }
 
 
-    override fun isValid(): Boolean {
-        return true
+    override fun checkValid(): Dto {
+        return this
     }
 
 

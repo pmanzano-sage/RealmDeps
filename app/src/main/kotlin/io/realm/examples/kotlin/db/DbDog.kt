@@ -16,12 +16,14 @@
 
 package io.realm.examples.kotlin.db
 
+import io.realm.Realm
 import io.realm.RealmObject
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.Required
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.mapper.Db
 import io.realm.examples.kotlin.mapper.convertToDto
+import io.realm.examples.kotlin.mapper.deleteCascade
 import io.realm.examples.kotlin.mapper.generateId
 import io.realm.examples.kotlin.model.Dog
 
@@ -56,4 +58,7 @@ open class DbDog(
         return convertToDto(DbDog::class.java, getDtoClass())
     }
 
+    override fun delete(realm: Realm): Boolean {
+        return deleteCascade(DbDog::class.java, realm)
+    }
 }

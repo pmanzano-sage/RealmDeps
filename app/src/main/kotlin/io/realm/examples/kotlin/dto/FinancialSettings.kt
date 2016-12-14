@@ -25,8 +25,8 @@ data class FinancialSettings(
         return RealmFinancialSettings::class.java
     }
 
-    override fun isValid(): Boolean {
-        return true
+    override fun checkValid(): Dto {
+        return this
     }
 
     override fun toDb(): RealmFinancialSettings {

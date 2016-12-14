@@ -22,8 +22,11 @@ data class TransactionCategory(
         return RealmTransactionCategory::class.java
     }
 
-    override fun isValid(): Boolean {
-        return true
+    override fun checkValid(): Dto {
+        if (label.isBlank()) {
+            throw IllegalArgumentException("TransactionCategory label can not be blank!\nOffending instance:\n${this}")
+        }
+        return this
     }
 
     override fun toDb(): RealmTransactionCategory {

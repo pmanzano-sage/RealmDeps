@@ -32,8 +32,18 @@ data class Transaction(
         return RealmTransaction::class.java
     }
 
-    override fun isValid(): Boolean {
-        return true
+    override fun checkValid(): Dto {
+        if (title!!.isBlank()) {
+            throw IllegalArgumentException("Transaction title can not be blank!\nOffending instance:\n${this}")
+        }
+        amount.checkValid()
+        accountSource?.checkValid()
+        accountDest?.checkValid()
+        category?.checkValid()
+        attachment?.checkValid()
+        contact?.checkValid()
+        taxRate?.checkValid()
+        return this
     }
 
     override fun toDb(): RealmTransaction {

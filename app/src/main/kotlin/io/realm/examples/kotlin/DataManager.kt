@@ -91,18 +91,19 @@ class DataManager(realm: Realm) : PersistenceProvider {
 
     override fun save(dto: Dto): Boolean {
         var success = false
-        if (dto.isValid()) {
-            val dbEntity = dto.toDb()
-            if (dbEntity.readyToSave()) {
+        val dbEntity = dto.checkValid().toDb()
+        if (dbEntity.readyToSave()) {
+            try {
                 realm.executeTransaction {
                     realm.copyToRealmOrUpdate(dbEntity)
                     success = true
                 }
-            } else {
-                throw Exception("Db entity can not be created")
+            } catch (e: Exception) {
+                Log.e("save", "Exception: ${e.message}")
             }
         } else {
-            throw IllegalArgumentException("Dto received is invalid")
+            Log.e("save", "Entity is not ready to be saved")
+            throw Exception("Db entity can not be created")
         }
         return success
     }

@@ -34,8 +34,11 @@ data class Cat(
         return DbCat::class.java
     }
 
-    override fun isValid(): Boolean {
-        return name.isNotEmpty()
+    override fun checkValid(): Dto {
+        if (name.isBlank()) {
+            throw IllegalArgumentException("Cat name can not be blank!\nOffending instance:\n${this}")
+        }
+        return this
     }
 
     override fun toDb(): DbCat {

@@ -23,8 +23,11 @@ data class Business(
         return RealmBusiness::class.java
     }
 
-    override fun isValid(): Boolean {
-        return true
+    override fun checkValid(): Dto {
+        if (name.isBlank()) {
+            throw IllegalArgumentException("Business name can not be blank!\nOffending instance:\n${this}")
+        }
+        return this
     }
 
     override fun toDb(): RealmBusiness {
@@ -32,6 +35,6 @@ data class Business(
     }
 
     override fun toDisplayString(): String {
-        return "$name"
+        return name
     }
 }

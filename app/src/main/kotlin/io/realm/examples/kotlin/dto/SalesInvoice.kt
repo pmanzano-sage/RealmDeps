@@ -40,8 +40,14 @@ data class SalesInvoice(
         return RealmSalesInvoice::class.java
     }
 
-    override fun isValid(): Boolean {
-        return true
+    override fun checkValid(): Dto {
+        if (displayAs.isBlank()) {
+            throw IllegalArgumentException("Sales invoice displayAs can not be blank!\nOffending instance:\n${this}")
+        }
+        invoiceLines?.map { it.checkValid() }
+        payments?.map { it.checkValid() }
+
+        return this
     }
 
     override fun toDb(): RealmSalesInvoice {

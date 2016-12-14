@@ -25,8 +25,11 @@ data class SubTaxRate(
         return RealmSubTaxRate::class.java
     }
 
-    override fun isValid(): Boolean {
-        return true
+    override fun checkValid(): Dto {
+        if (name.isBlank()) {
+            throw IllegalArgumentException("SubTaxRate name can not be blank!\nOffending instance:\n${this}")
+        }
+        return this
     }
 
     override fun toDb(): RealmSubTaxRate {

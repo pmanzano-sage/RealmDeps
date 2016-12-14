@@ -28,6 +28,8 @@ import io.realm.Sort
 import io.realm.examples.kotlin.db.DbCat
 import io.realm.examples.kotlin.db.DbDog
 import io.realm.examples.kotlin.db.DbPerson
+import io.realm.examples.kotlin.dto.Account
+import io.realm.examples.kotlin.dto.AccountType
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.model.Cat
 import io.realm.examples.kotlin.model.Dog
@@ -41,7 +43,18 @@ import kotlin.system.measureTimeMillis
  *
  * To Do
  *
+ * - Implementar la solucion para los partially filled-in entities.
  *
+ * - Resolver el tema de borrado de dependencias.
+ *
+ *   Crear una factura con varias lineas y luego borrarla.
+ *
+ *   Si creamos una interface "Child" significa que siempre se usará de forma exclusiva y
+ *   que tiene que tener si o si un campo llamado parentId.
+ *
+ * - Luego escribir unas cuantas pruebas del DataManager.
+
+ * - Otra cosa que estaría bien tambien es recibir una lista de campos en los updates.
  *
  * - Add Date & Boolean support.
  * - Use copyFromRealm to ensure that we work with unmanaged entities.
@@ -50,6 +63,7 @@ import kotlin.system.measureTimeMillis
  *
  * Done
  *
+ * - Code some convenience factories for the Dtos.
  * - Can not ignore attributes from Realm cause retention type is CLASS and not RUNTIME.
  * - You can create a model that doesn't have an id or primary key.
  * - When you delete items that belong to a list pointed by some other object, what happens?
@@ -156,12 +170,28 @@ class KotlinExampleActivity : Activity() {
 //        }
     }
 
+    /**
+     * The idea here is to verify that exclusive dependencies are deleted when the parent entity
+     * is deleted. So we do not leave unused entities in the database.
+     *
+     * - Create an invoice with multiple lines.
+     * - Save it into the db
+     * - Now check that now related invoice lines are left.
+     */
+    private fun testDeleteCascade() {
+        try {
+            var ok = false
+        } catch (e: Exception) {
+            showStatus("${e.message}")
+        }
+    }
+
     private fun dataManagerTest() {
         try {
             var ok = false
 
-//            ok = dataManager.update(jake)
-//            showStatus("Jake updated: $ok")
+            ok = dataManager.update(jake)
+            showStatus("Jake updated: $ok")
 
             ok = dataManager.create(jake)
             showStatus("Jake created: $ok")
@@ -171,6 +201,19 @@ class KotlinExampleActivity : Activity() {
 
             val jake2 = dataManager.find(Person::class.java, jake.id)
             showStatus("Jake2: $jake2")
+
+            val accountType = AccountType.create(AccountType.Companion.V3.CASH_IN_HAND)
+            dataManager.save(accountType)
+
+            val accType = dataManager.find(AccountType::class.java, accountType.id)
+            showStatus("AccountType: $accType")
+
+            val account = Account.create(AccountType.Companion.V3.CASH_IN_HAND)
+            dataManager.save(account)
+
+            val myAccount = dataManager.find(Account::class.java, account.id)
+            showStatus("Account: $myAccount")
+
 
         } catch (e: Exception) {
             showStatus("${e.message}")

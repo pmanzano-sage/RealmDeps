@@ -20,8 +20,11 @@ data class ContactType(
         return RealmContactType::class.java
     }
 
-    override fun isValid(): Boolean {
-        return true
+    override fun checkValid(): Dto {
+        if (name.isBlank()) {
+            throw IllegalArgumentException("ContactType name can not be blank!\nOffending instance:\n${this}")
+        }
+        return this
     }
 
     override fun toDb(): RealmContactType {

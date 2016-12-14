@@ -39,8 +39,13 @@ data class Person(override val id: String = generateId(),
         return convertToDb(Person::class.java, getDbClass())
     }
 
-    override fun isValid(): Boolean {
-        return name.isNotEmpty() && (dog == null || dog.isValid()) && cats.fold(true) { valid, next -> valid && next.isValid() }
+    override fun checkValid(): Dto {
+        if (name.isBlank()) {
+            throw IllegalArgumentException("Person name can not be blank!\nOffending instance:\n${this}")
+        }
+        dog?.checkValid()
+        cats.map(Cat::checkValid)
+        return this
     }
 
     fun log() {

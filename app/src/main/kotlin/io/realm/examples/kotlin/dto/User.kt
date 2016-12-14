@@ -21,8 +21,11 @@ data class User(
         return RealmUser::class.java
     }
 
-    override fun isValid(): Boolean {
-        return true
+    override fun checkValid(): Dto {
+        if (email.isBlank()) {
+            throw IllegalArgumentException("User email can not be blank!\nOffending instance:\n${this}")
+        }
+        return this
     }
 
     override fun toDb(): RealmUser {

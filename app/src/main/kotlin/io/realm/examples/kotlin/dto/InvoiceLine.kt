@@ -27,8 +27,11 @@ data class InvoiceLine(
         return RealmInvoiceLine::class.java
     }
 
-    override fun isValid(): Boolean {
-        return true
+    override fun checkValid(): Dto {
+        if (displayAs.isBlank()) {
+            throw IllegalArgumentException("InvoiceLine displayAs can not be blank!\nOffending instance:\n${this}")
+        }
+        return this
     }
 
     override fun toDb(): RealmInvoiceLine {

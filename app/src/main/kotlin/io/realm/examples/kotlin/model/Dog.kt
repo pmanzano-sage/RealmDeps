@@ -33,8 +33,11 @@ data class Dog(
         return convertToDb(Dog::class.java, getDbClass())
     }
 
-    override fun isValid(): Boolean {
-        return name.isNotEmpty()
+    override fun checkValid(): Dto {
+        if (name.isBlank()) {
+            throw IllegalArgumentException("Dog name can not be blank!\nOffending instance:\n${this}")
+        }
+        return this
     }
 
     override fun toDisplayString(): String {

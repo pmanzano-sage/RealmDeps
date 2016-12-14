@@ -20,8 +20,16 @@ data class Country(
         return RealmCountry::class.java
     }
 
-    override fun isValid(): Boolean {
-        return true
+    override fun checkValid(): Dto {
+        try {
+            Code.valueOf(code!!)
+        } catch (e: IllegalArgumentException) {
+            throw IllegalArgumentException("Unsupported country used! \nOffending instance:\n${this}")
+        }
+        if (name!!.isBlank()) {
+            throw IllegalArgumentException("Country name can not be blank!\nOffending instance:\n${this}")
+        }
+        return this
     }
 
     override fun toDb(): RealmCountry {
@@ -31,4 +39,21 @@ data class Country(
     override fun toDisplayString(): String {
         return name ?: ""
     }
+
+    // Convenient factory methods
+    companion object {
+
+        enum class Code(val countryName: String) {
+            UK("United Kingdom"),
+            US("United States"),
+            IE("Ireland"),
+            CA("Canada")
+        }
+
+        fun create(countryCode: Code): Country {
+            return Country(countryCode.name, SyncStatus.getDefault(), countryCode.name, countryCode.countryName)
+        }
+
+    }
+
 }

@@ -1,14 +1,12 @@
 package io.realm.examples.kotlin.entity
 
-import io.realm.examples.kotlin.dto.TransactionType
+import io.realm.Realm
 import io.realm.RealmObject
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.Required
+import io.realm.examples.kotlin.dto.TransactionType
 import io.realm.examples.kotlin.dto.definition.SyncStatus
-import io.realm.examples.kotlin.mapper.Db
-import io.realm.examples.kotlin.mapper.Dto
-import io.realm.examples.kotlin.mapper.convertToDto
-import io.realm.examples.kotlin.mapper.generateId
+import io.realm.examples.kotlin.mapper.*
 import java.util.*
 
 open class RealmTransactionType(
@@ -30,6 +28,10 @@ open class RealmTransactionType(
 
     override fun getDtoClass(): Class<out TransactionType> {
         return TransactionType::class.java
+    }
+
+    override fun delete(realm: Realm): Boolean {
+        return deleteCascade(RealmTransactionType::class.java, realm)
     }
 
 }

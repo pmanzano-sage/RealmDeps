@@ -25,8 +25,11 @@ data class TransactionType(
         return RealmTransactionType::class.java
     }
 
-    override fun isValid(): Boolean {
-        return true
+    override fun checkValid(): Dto {
+        if (ordinal < INCOME || ordinal > BANK_DEPOSIT) {
+            throw IllegalArgumentException("TransactionType ordinal out of range!\nOffending instance:\n${this}")
+        }
+        return this
     }
 
     override fun toDb(): RealmTransactionType {

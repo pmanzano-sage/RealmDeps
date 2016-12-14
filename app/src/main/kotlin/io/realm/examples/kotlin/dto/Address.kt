@@ -1,6 +1,5 @@
 package io.realm.examples.kotlin.dto
 
-import io.realm.examples.kotlin.dto.Country
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.entity.RealmAddress
 import io.realm.examples.kotlin.mapper.Dto
@@ -25,8 +24,8 @@ data class Address(
         return RealmAddress::class.java
     }
 
-    override fun isValid(): Boolean {
-        return true
+    override fun checkValid(): Dto {
+        return this
     }
 
     override fun toDb(): RealmAddress {

@@ -1,8 +1,10 @@
 package io.realm.examples.kotlin.mapper
 
 import android.util.Log
+import io.realm.Realm
 import io.realm.RealmList
 import io.realm.RealmModel
+import io.realm.RealmObject
 import io.realm.examples.kotlin.dto.definition.Constants
 import io.realm.examples.kotlin.dto.definition.StringUtils
 import io.realm.examples.kotlin.dto.definition.SyncStatus
@@ -25,7 +27,7 @@ interface Dto {
     fun isPersistedOnServer() = !StringUtils.isEmpty(id) && !id.startsWith(Constants.FAKE_API_ID_PREFIX)
 
     fun toDb(): Db
-    fun isValid(): Boolean
+    fun checkValid(): Dto
     fun getDbClass(): Class<out Db>
 }
 
@@ -42,8 +44,15 @@ interface Db : RealmModel {
     fun toDto(): Dto
     fun readyToSave(): Boolean
     fun getDtoClass(): Class<out Dto>
+    fun delete(realm: Realm): Boolean
 }
 
+/**
+ * This interface has to be implemented by all the entities that require a backlink to its parent.
+ */
+interface DbChild : RealmModel {
+    var parentId: String
+}
 
 /**
  * Generic function to convert a Dto to a RealmObject.
@@ -57,9 +66,6 @@ fun <F, T> F.convertToDb(fromClazz: Class<F>, toClazz: Class<T>): T {
         try {
             val methodName = "set${field.name.capitalize()}"
             val type = field.type
-
-            val targetField = toClazz.getDeclaredField(field.name)
-            targetField.isAccessible = true
 
             when {
                 type == String::class.java -> {
@@ -88,9 +94,12 @@ fun <F, T> F.convertToDb(fromClazz: Class<F>, toClazz: Class<T>): T {
 //                    if (targetField.isAnnotationPresent(Exclusive::class.java)) {
 //                        Log.d(TAG, "Field '${targetField.name}' is Exclusive")
 //                    }
+                    Log.e(TAG, "Type '${type.name}' is primitive = ${type.isPrimitive}")
                     // Get the object from the source field, and convert it to DTO.
                     val dtoObject = field.get(this) as? Dto
                     // Set the Db object to the target field
+                    val targetField = toClazz.getDeclaredField(field.name)
+                    targetField.isAccessible = true
                     dtoObject?.toDb().let { targetField.set(instance, it) }
                 }
                 List::class.java.isAssignableFrom(type) -> {
@@ -98,12 +107,14 @@ fun <F, T> F.convertToDb(fromClazz: Class<F>, toClazz: Class<T>): T {
 //                    if (targetField.isAnnotationPresent(Exclusive::class.java)) {
 //                        Log.d(TAG, "List field '${targetField.name}' is Exclusive")
 //                    }
-
+                    Log.e(TAG, "Type '${type.name}' is primitive = ${type.isPrimitive}")
                     // Get the list from the source field
                     val list = field.get(this) as List<*>
                     val dbList = RealmList<RealmModel>()
                     list.map { it as Dto }.mapTo(dbList, Dto::toDb)
                     // Set the DTO list to the target field
+                    val targetField = toClazz.getDeclaredField(field.name)
+                    targetField.isAccessible = true
                     targetField.set(instance, dbList)
                 }
                 else -> Log.e(TAG, "Type '${type.name}' not mapped in '$toClazz'")
@@ -165,4 +176,39 @@ fun <F, T> F.convertToDto(fromClazz: Class<in F>, toClazz: Class<out T>): T {
     }
 
     return instance
+}
+
+
+/**
+ * Generic function to delete a RealmObject all together with its exclusive dependencies.
+ */
+fun <F> F.deleteCascade(fromClazz: Class<in F>, realm: Realm): Boolean {
+    val success = false
+    val TAG = "deleteCascade"
+    val fields = fromClazz.declaredFields
+
+    for (field in fields) {
+        field.isAccessible = true
+        try {
+            val type = field.type
+            when {
+                DbChild::class.java.isAssignableFrom(type) -> {
+                    // Get the object from the source field, and delete it
+                    val dbObject = field.get(this) as? DbChild
+                    dbObject.let { RealmObject.deleteFromRealm(it) }
+                }
+                RealmList::class.java.isAssignableFrom(type) -> {
+                    val gentype = field.genericType
+                    Log.e(TAG, "Generic type '${gentype}'")
+                    // Get the list from the source field, and delete all the entities in the list.
+                    val list = field.get(this) as RealmList<*>
+                    list.map { it as Db }.map { RealmObject.deleteFromRealm(it) }
+                }
+                else -> Log.w(TAG, "'${field.name}' kept")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "${e.message}")
+        }
+    }
+    return success
 }

@@ -19,8 +19,11 @@ data class Me(
         return RealmMe::class.java
     }
 
-    override fun isValid(): Boolean {
-        return true
+    override fun checkValid(): Dto {
+        if (serviceUids.isEmpty()) {
+            throw IllegalArgumentException("Me has no services!\nOffending instance:\n${this}")
+        }
+        return this
     }
 
     override fun toDb(): RealmMe {
