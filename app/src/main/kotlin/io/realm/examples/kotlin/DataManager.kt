@@ -12,27 +12,35 @@ import io.realm.examples.kotlin.mapper.Dto
  * @since 13/12/16
  */
 interface PersistenceProvider {
+    fun deleteAll()
     fun save(dto: Dto): Boolean
     fun create(dto: Dto): Boolean
     fun update(dto: Dto): Boolean
     fun delete(dto: Dto): Boolean
     fun find(clazz: Class<out Dto>, id: String): Dto?
+    fun getAll(clazz: Class<out Dto>): List<Dto>
 }
 
 /**
  * This is a Realm implementation of the PersistenceProvider.
- *         realm.executeTransaction {
-val person = realm.where(DbPerson::class.java).equalTo("id", 567).findFirst()
-person.deleteFromRealm()
-}
-
  */
 class DataManager(realm: Realm) : PersistenceProvider {
-
-    private var realm: Realm
+    private val realm: Realm
 
     init {
         this.realm = realm
+    }
+
+    override fun getAll(clazz: Class<out Dto>): List<Dto> {
+        // TODO There should be a better way to figure out the dbClass (instead of creating an instance)
+        val dto = clazz.newInstance()
+        return findAllDb(dto.getDbClass()).map(Db::toDto)
+    }
+
+    override fun deleteAll() {
+        realm.executeTransaction {
+            realm.deleteAll()
+        }
     }
 
     override fun find(clazz: Class<out Dto>, id: String): Dto? {
@@ -65,6 +73,10 @@ class DataManager(realm: Realm) : PersistenceProvider {
             throw Exception("Already exists ${dto.javaClass.name} with id=${dto.id}")
         }
         return success
+    }
+
+    private fun findAllDb(clazz: Class<out Db>): List<Db> {
+        return realm.where(clazz).findAll()
     }
 
 

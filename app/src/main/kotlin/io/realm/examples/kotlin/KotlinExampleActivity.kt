@@ -43,7 +43,7 @@ import kotlin.system.measureTimeMillis
  *
  * To Do
  *
- * - Implementar la solucion para los partially filled-in entities.
+ * - Agregar Instrumentation tests & Junit.
  *
  * - Resolver el tema de borrado de dependencias.
  *
@@ -52,6 +52,7 @@ import kotlin.system.measureTimeMillis
  *   Si creamos una interface "Child" significa que siempre se usará de forma exclusiva y
  *   que tiene que tener si o si un campo llamado parentId.
  *
+ * - Implementar la solucion para los partially filled-in entities.
  * - Luego escribir unas cuantas pruebas del DataManager.
 
  * - Otra cosa que estaría bien tambien es recibir una lista de campos en los updates.
@@ -190,17 +191,17 @@ class KotlinExampleActivity : Activity() {
         try {
             var ok = false
 
-            ok = dataManager.update(jake)
-            showStatus("Jake updated: $ok")
-
-            ok = dataManager.create(jake)
-            showStatus("Jake created: $ok")
-
-            ok = dataManager.delete(aDog)
-            showStatus("Spike deleted: $ok")
-
-            val jake2 = dataManager.find(Person::class.java, jake.id)
-            showStatus("Jake2: $jake2")
+//            ok = dataManager.update(jake)
+//            showStatus("Jake updated: $ok")
+//
+//            ok = dataManager.create(jake)
+//            showStatus("Jake created: $ok")
+//
+//            ok = dataManager.delete(aDog)
+//            showStatus("Spike deleted: $ok")
+//
+//            val jake2 = dataManager.find(Person::class.java, jake.id)
+//            showStatus("Jake2: $jake2")
 
             val accountType = AccountType.create(AccountType.Companion.V3.CASH_IN_HAND)
             dataManager.save(accountType)
