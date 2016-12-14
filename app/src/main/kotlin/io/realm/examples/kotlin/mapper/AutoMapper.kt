@@ -162,9 +162,9 @@ fun <F, T> F.convertToDto(fromClazz: Class<in F>, toClazz: Class<out T>): T {
                 }
                 RealmList::class.java.isAssignableFrom(type) -> {
                     // Get the list from the source field
-                    val list = field.get(this) as RealmList<*>
+                    val list = field.get(this) as? RealmList<*>
                     val dtoList = arrayListOf<Dto>()
-                    list.map { it as Db }.mapTo(dtoList, Db::toDto)
+                    list?.map { it as Db }?.mapTo(dtoList, Db::toDto)
                     // Set the DTO list to the target field
                     targetField.set(instance, dtoList)
                 }

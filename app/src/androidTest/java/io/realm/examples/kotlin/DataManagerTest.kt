@@ -71,7 +71,7 @@ class DataManagerTest : AndroidTestCase() {
     private val API_ID_3 = "apiId3"
     private val LOCAL3 = "local3"
 
-    private lateinit var fakeEntity: SalesInvoice
+    private lateinit var testInvoice: SalesInvoice
     private lateinit var dataManager: DataManager
 
     /**
@@ -89,7 +89,8 @@ class DataManagerTest : AndroidTestCase() {
         dataManager.deleteAll()
 
         // Create one invoice
-        fakeEntity = createInvoice(API_ID_1, INVOICE_NUMBER, INVOICE_REF, INVOICE_DATE, INVOICE_LINES, INVOICE_PAYMENTS)
+        testInvoice = createInvoice(API_ID_1, INVOICE_NUMBER, INVOICE_REF, INVOICE_DATE, INVOICE_LINES, INVOICE_PAYMENTS)
+        dataManager.save(testInvoice)
     }
 
     @Throws(Exception::class)
@@ -128,7 +129,7 @@ class DataManagerTest : AndroidTestCase() {
     @Throws(Exception::class)
     fun testUpdateSalesInvoice1() {
 
-        // Create an invoice with everything equal to fakeEntity, except for the invoice lines, totals, etc...
+        // Create an invoice with everything equal to testInvoice, except for the invoice lines, totals, etc...
         val updatedInvoice = createInvoice(API_ID_1, INVOICE_NUMBER, INVOICE_REF, INVOICE_DATE, UPDATED_INVOICE_LINES,
                 UPDATED_INVOICE_PAYMENTS)
 
@@ -162,7 +163,7 @@ class DataManagerTest : AndroidTestCase() {
      */
     @Throws(Exception::class)
     fun testDeleteSalesInvoice() {
-        dataManager.delete(fakeEntity)
+        dataManager.delete(testInvoice)
 
         // Check the number of invoices in the db
         val invoices = dataManager.getAll(SalesInvoice::class.java)
