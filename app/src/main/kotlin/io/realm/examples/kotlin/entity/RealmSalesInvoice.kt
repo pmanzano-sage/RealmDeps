@@ -2,14 +2,15 @@ package io.realm.examples.kotlin.entity
 
 import io.realm.Realm
 import io.realm.RealmList
-import io.realm.RealmObject
 import io.realm.annotations.PrimaryKey
+import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
 import io.realm.examples.kotlin.dto.SalesInvoice
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.mapper.*
 import java.util.*
 
+@RealmClass
 open class RealmSalesInvoice(
         @PrimaryKey @Required override var id: String = generateId(),
         override var sync: Int = SyncStatus.getDefault().ordinal,
@@ -30,7 +31,8 @@ open class RealmSalesInvoice(
         open var termsAndConditions: String = "",
         open var invoiceLines: RealmList<RealmInvoiceLine>? = null,
         open var payments: RealmList<RealmPayment>? = null,
-        open var contact: RealmContact? = null) : RealmObject(), Db {
+        open var contact: RealmContact? = null
+) : Db {
 
     override fun toDto(): Dto {
         return convertToDto(RealmSalesInvoice::class.java, getDtoClass())

@@ -18,9 +18,9 @@ package io.realm.examples.kotlin.db
 
 import io.realm.Realm
 import io.realm.RealmList
-import io.realm.RealmObject
 import io.realm.annotations.Ignore
 import io.realm.annotations.PrimaryKey
+import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.mapper.*
@@ -29,6 +29,8 @@ import io.realm.examples.kotlin.model.Person
 // Your model has to extend RealmObject. Furthermore, the class and all of the
 // properties must be annotated with open (Kotlin classes and methods are final
 // by default).
+
+@RealmClass
 open class DbPerson(
         // You can put properties in the constructor as long as all of them are initialized with
         // default values. This ensures that an empty constructor is generated.
@@ -54,7 +56,7 @@ open class DbPerson(
         // You can instruct Realm to ignore a field and not persist it.
         @Ignore open var tempReference: Int = 0
 
-) : RealmObject(), Db {
+) : Db {
     // The Kotlin compiler generates standard getters and setters.
     // Realm will overload them and code inside them is ignored.
     // So if you prefer you can also just have empty abstract methods.

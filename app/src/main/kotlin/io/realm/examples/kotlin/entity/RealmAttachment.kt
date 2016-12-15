@@ -1,14 +1,15 @@
 package io.realm.examples.kotlin.entity
 
 import io.realm.Realm
-import io.realm.RealmObject
 import io.realm.annotations.PrimaryKey
+import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
 import io.realm.examples.kotlin.dto.Attachment
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.mapper.*
 import java.util.*
 
+@RealmClass
 open class RealmAttachment(
         @PrimaryKey @Required override var id: String = generateId(),
         override var sync: Int = SyncStatus.getDefault().ordinal,
@@ -27,7 +28,7 @@ open class RealmAttachment(
         open var url: String = "",
         open var tmpFile: String = ""
 
-) : RealmObject(), Db {
+) : Db {
 
     override fun toDto(): Dto {
         return convertToDto(RealmAttachment::class.java, getDtoClass())

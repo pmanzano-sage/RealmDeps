@@ -17,8 +17,8 @@
 package io.realm.examples.kotlin.db
 
 import io.realm.Realm
-import io.realm.RealmObject
 import io.realm.annotations.PrimaryKey
+import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.mapper.Db
@@ -27,12 +27,13 @@ import io.realm.examples.kotlin.mapper.deleteCascade
 import io.realm.examples.kotlin.mapper.generateId
 import io.realm.examples.kotlin.model.Dog
 
+@RealmClass
 open class DbDog(
         @PrimaryKey @Required override var id: String = generateId(),
         override var sync: Int = SyncStatus.getDefault().ordinal,
         open var name: String = "",
         open var age: Int = 0
-) : RealmObject(), Db {
+) : Db {
 
     // If client code does not provide an id, a random one is generated.
     constructor(name: String, age: Int) : this(

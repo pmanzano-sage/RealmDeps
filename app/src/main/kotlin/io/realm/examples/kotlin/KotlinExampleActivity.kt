@@ -43,27 +43,19 @@ import kotlin.system.measureTimeMillis
  *
  * To Do
  *
- * - Agregar Instrumentation tests & Junit.
- *
- * - Resolver el tema de borrado de dependencias.
- *
- *   Crear una factura con varias lineas y luego borrarla.
- *
- *   Si creamos una interface "Child" significa que siempre se usará de forma exclusiva y
- *   que tiene que tener si o si un campo llamado parentId.
+ * - Probar borrar objetos con listas que no implementen BackLink. Mirar que no las borre.
+ * - Usar delegates para desacoplar algo más los mappers.
  *
  * - Implementar la solucion para los partially filled-in entities.
  * - Luego escribir unas cuantas pruebas del DataManager.
-
  * - Otra cosa que estaría bien tambien es recibir una lista de campos en los updates.
- *
  * - Add Date & Boolean support.
  * - Use copyFromRealm to ensure that we work with unmanaged entities.
- * - Pensar bien el tema de las dependencias que se deben borrar en cascada y cuales no.
- *   Esto puede estar relacionado con el tema de buscar primero aquellos objetos que están incompletos.
  *
  * Done
  *
+ * - Add Instrumentation tests & Junit.
+ * - Come up with a solution for cascade deletion.
  * - Code some convenience factories for the Dtos.
  * - Can not ignore attributes from Realm cause retention type is CLASS and not RUNTIME.
  * - You can create a model that doesn't have an id or primary key.

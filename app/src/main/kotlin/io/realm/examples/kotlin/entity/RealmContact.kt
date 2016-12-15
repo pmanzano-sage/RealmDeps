@@ -1,14 +1,15 @@
 package io.realm.examples.kotlin.entity
 
 import io.realm.Realm
-import io.realm.RealmObject
 import io.realm.annotations.PrimaryKey
+import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
 import io.realm.examples.kotlin.dto.Contact
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.mapper.*
 import java.util.*
 
+@RealmClass
 open class RealmContact(
         @PrimaryKey @Required override var id: String = generateId(),
         override var sync: Int = SyncStatus.getDefault().ordinal,
@@ -24,7 +25,7 @@ open class RealmContact(
         open var address: RealmAddress? = null,
         open var company: String = "",
         open var contactType: RealmContactType? = null
-) : RealmObject(), Db {
+) : Db {
 
     override fun toDto(): Dto {
         return convertToDto(RealmContact::class.java, getDtoClass())

@@ -2,8 +2,8 @@ package io.realm.examples.kotlin.entity
 
 import android.util.Log
 import io.realm.Realm
-import io.realm.RealmObject
 import io.realm.annotations.PrimaryKey
+import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
 import io.realm.examples.kotlin.dto.Account
 import io.realm.examples.kotlin.dto.Amount
@@ -15,6 +15,7 @@ import java.text.DecimalFormat
 import java.text.ParseException
 import java.util.*
 
+@RealmClass
 open class RealmAccount(
         @PrimaryKey @Required override var id: String = generateId(),
         override var sync: Int = SyncStatus.getDefault().ordinal,
@@ -28,7 +29,7 @@ open class RealmAccount(
         open var balance: String? = null,
         open var currency: String = "",
         open var editable: Boolean = true
-) : RealmObject(), Db {
+) : Db {
 
     override fun delete(realm: Realm): Boolean {
         return deleteCascade(RealmAccount::class.java, realm)

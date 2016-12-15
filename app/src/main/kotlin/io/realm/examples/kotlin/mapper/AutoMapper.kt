@@ -44,13 +44,19 @@ interface Db : RealmModel {
     fun toDto(): Dto
     fun readyToSave(): Boolean
     fun getDtoClass(): Class<out Dto>
+    // fun del(localStore: LocalStore): Boolean
     fun delete(realm: Realm): Boolean
 }
 
+// Just a tagging interface that we should use in place of Realm.
+// Understand delegate syntax in Kotlin for this..
+interface LocalStore
+
 /**
- * This interface has to be implemented by all the entities that require a backlink to its parent.
+ * This interface has to be implemented by all the entities that require a back link to its parent.
+ * As a side effect, these entities will be cascade deleted when its parent is deleted.
  */
-interface DbChild {
+interface BackLink {
     var parentId: String
 }
 
@@ -186,7 +192,7 @@ fun <F, T> F.convertToDto(fromClazz: Class<in F>, toClazz: Class<out T>): T {
 
 /**
  * Generic function to cascade a RealmObject deletion.
- * All Db objects that also implement DbChild interface will be deleted.
+ * All Db objects that also implement BackLink interface will be deleted.
  */
 fun Db.deleteCascade(clazz: Class<out Db>, realm: Realm, level: Int = 0): Boolean {
     var success = true
@@ -199,13 +205,13 @@ fun Db.deleteCascade(clazz: Class<out Db>, realm: Realm, level: Int = 0): Boolea
 
     Log.i(TAG, "${TAB.repeat(level)} ${myself.javaClass.simpleName} ${myself.id}")
 
-    // Recursively delete dependencies that implement DbChild interface
+    // Recursively delete dependencies that implement BackLink interface
     for (field in fields) {
         field.isAccessible = true
         try {
             val type = field.type
             when {
-                Db::class.java.isAssignableFrom(type) && DbChild::class.java.isAssignableFrom(type) -> {
+                Db::class.java.isAssignableFrom(type) && BackLink::class.java.isAssignableFrom(type) -> {
                     // Get the object from the source field, and delete it
                     val dbObject = field.get(myself) as? Db
                     Log.w(TAG, "${TAB.repeat(level)} Object '${field.name}'")
