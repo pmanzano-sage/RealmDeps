@@ -134,7 +134,7 @@ class DataManagerTest : AndroidTestCase() {
                 UPDATED_INVOICE_PAYMENTS)
 
         // Since both invoices have the same apiId, saving it to the db should trigger an update operation.
-        val savedInvoice = dataManager.save(updatedInvoice)
+        val savedInvoice = dataManager.update(updatedInvoice)
 
         // Check the number of invoices in the db
         val invoices = dataManager.getAll(SalesInvoice::class.java)
@@ -159,10 +159,11 @@ class DataManagerTest : AndroidTestCase() {
      *
      * Checks that:
      * - After deleting all the invoices there are no invoices left in the db.
-     * - It also checks that no dependencies (in this case invoice lines) are left in the db.
+     * - It also checks that no dependencies (in this case invoice lines and payments) are left in the db.
      */
     @Throws(Exception::class)
     fun testDeleteSalesInvoice() {
+
         dataManager.delete(testInvoice)
 
         // Check the number of invoices in the db
@@ -175,6 +176,10 @@ class DataManagerTest : AndroidTestCase() {
         Assert.assertNotNull(lines)
         Assert.assertEquals(0, lines.size)
 
+        // Check the number of payments in the db
+        val payments = dataManager.getAll(Payment::class.java)
+        Assert.assertNotNull(payments)
+        Assert.assertEquals(0, payments.size)
     }
 
 

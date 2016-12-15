@@ -50,7 +50,7 @@ interface Db : RealmModel {
 /**
  * This interface has to be implemented by all the entities that require a backlink to its parent.
  */
-interface DbChild : RealmModel {
+interface DbChild {
     var parentId: String
 }
 
@@ -94,7 +94,6 @@ fun <F, T> F.convertToDb(fromClazz: Class<F>, toClazz: Class<T>): T {
 //                    if (targetField.isAnnotationPresent(Exclusive::class.java)) {
 //                        Log.d(TAG, "Field '${targetField.name}' is Exclusive")
 //                    }
-                    Log.e(TAG, "Type '${type.name}' is primitive = ${type.isPrimitive}")
                     // Get the object from the source field, and convert it to DTO.
                     val dtoObject = field.get(this) as? Dto
                     // Set the Db object to the target field
@@ -107,7 +106,6 @@ fun <F, T> F.convertToDb(fromClazz: Class<F>, toClazz: Class<T>): T {
 //                    if (targetField.isAnnotationPresent(Exclusive::class.java)) {
 //                        Log.d(TAG, "List field '${targetField.name}' is Exclusive")
 //                    }
-                    Log.e(TAG, "Type '${type.name}' is primitive = ${type.isPrimitive}")
                     // Get the list from the source field
                     val list = field.get(this) as List<*>
                     val dbList = RealmList<RealmModel>()
@@ -117,7 +115,10 @@ fun <F, T> F.convertToDb(fromClazz: Class<F>, toClazz: Class<T>): T {
                     targetField.isAccessible = true
                     targetField.set(instance, dbList)
                 }
-                else -> Log.e(TAG, "Type '${type.name}' not mapped in '$toClazz'")
+                type.name.contains("$") -> {
+                    // Log.w(TAG, "Inner '${type.name}' not mapped in '$toClazz'")
+                }
+                else -> Log.w(TAG, "'${type.name}' not mapped in '$toClazz'")
             }
         } catch (e: NoSuchMethodException) {
             Log.e(TAG, "Method ${e.message} not found in $toClazz")
@@ -140,6 +141,7 @@ fun <F, T> F.convertToDto(fromClazz: Class<in F>, toClazz: Class<out T>): T {
         try {
             val type = field.type
 
+            // Todo Move this after checking the type
             val targetField = toClazz.getDeclaredField(field.name)
             targetField.isAccessible = true
 
@@ -168,10 +170,13 @@ fun <F, T> F.convertToDto(fromClazz: Class<in F>, toClazz: Class<out T>): T {
                     // Set the DTO list to the target field
                     targetField.set(instance, dtoList)
                 }
-                else -> Log.e(TAG, "Type '${type.name}' not mapped in '$toClazz'")
+                type.name.contains("Companion") -> {
+                    // Log.w(TAG, "'${type.name}' not mapped in '$toClazz'")
+                }
+                else -> Log.w(TAG, "Type '${type.name}' not mapped in '$toClazz'")
             }
         } catch (e: NoSuchFieldException) {
-            Log.e(TAG, "Field ${e.message} not found in $toClazz")
+            Log.e(TAG, "${e.message}")
         }
     }
 
@@ -180,35 +185,55 @@ fun <F, T> F.convertToDto(fromClazz: Class<in F>, toClazz: Class<out T>): T {
 
 
 /**
- * Generic function to delete a RealmObject all together with its exclusive dependencies.
+ * Generic function to cascade a RealmObject deletion.
+ * All Db objects that also implement DbChild interface will be deleted.
  */
-fun <F> F.deleteCascade(fromClazz: Class<in F>, realm: Realm): Boolean {
-    val success = false
+fun Db.deleteCascade(clazz: Class<out Db>, realm: Realm, level: Int = 0): Boolean {
+    var success = true
     val TAG = "deleteCascade"
-    val fields = fromClazz.declaredFields
+    val TAB = "  "
+    val fields = clazz.declaredFields
 
+    // Take the object out of Realm, otherwise realm proxy object will show us an empty instance.
+    val myself = if (level == 0 && RealmObject.isManaged(this)) realm.copyFromRealm(this) else this
+
+    Log.i(TAG, "${TAB.repeat(level)} ${myself.javaClass.simpleName} ${myself.id}")
+
+    // Recursively delete dependencies that implement DbChild interface
     for (field in fields) {
         field.isAccessible = true
         try {
             val type = field.type
             when {
-                DbChild::class.java.isAssignableFrom(type) -> {
+                Db::class.java.isAssignableFrom(type) && DbChild::class.java.isAssignableFrom(type) -> {
                     // Get the object from the source field, and delete it
-                    val dbObject = field.get(this) as? DbChild
-                    dbObject.let { RealmObject.deleteFromRealm(it) }
+                    val dbObject = field.get(myself) as? Db
+                    Log.w(TAG, "${TAB.repeat(level)} Object '${field.name}'")
+                    // First of all, delete that object dependencies
+                    dbObject?.deleteCascade(dbObject.javaClass, realm, level.inc())
                 }
                 RealmList::class.java.isAssignableFrom(type) -> {
-                    val gentype = field.genericType
-                    Log.e(TAG, "Generic type '${gentype}'")
-                    // Get the list from the source field, and delete all the entities in the list.
-                    val list = field.get(this) as RealmList<*>
-                    list.map { it as Db }.map { RealmObject.deleteFromRealm(it) }
+                    val list = field.get(myself) as RealmList<*>
+                    Log.w(TAG, "${TAB.repeat(level)} List '${field.name}': ${list.size} items")
+                    // Get the list from the source field, and deleteCascade all the entities in the list.
+                    list.map { it as Db? }.map { it?.deleteCascade(it.javaClass, realm, level.inc()) }
                 }
-                else -> Log.w(TAG, "'${field.name}' kept")
+                else -> {
+                }
             }
         } catch (e: Exception) {
             Log.e(TAG, "${e.message}")
+            success = false
         }
     }
+
+    // Finally delete this object
+    val obj = realm.where(myself.javaClass).equalTo("id", id).findFirst()
+    RealmObject.deleteFromRealm(obj)
+
+    if (level == 0) {
+        Log.w(TAG, "success=$success")
+    }
+
     return success
 }
