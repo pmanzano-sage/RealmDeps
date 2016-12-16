@@ -45,11 +45,11 @@ open class DbPerson(
         open var age: Int = 0,
 
         // Other objects in a one-to-one relation must also subclass RealmObject
-        @field:Exclusive
+        @CascadeOnDelete
         open var toy: DbToy? = null,
 
         // One-to-many relations is simply a RealmList of the objects which also subclass RealmObject
-        @field:Exclusive
+        @CascadeOnDelete
         open var cats: RealmList<DbCat> = RealmList(),
 
         open var wishList: RealmList<DbToy> = RealmList(),

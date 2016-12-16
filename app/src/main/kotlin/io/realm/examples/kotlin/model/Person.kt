@@ -3,26 +3,28 @@ package io.realm.examples.kotlin.model
 import io.realm.examples.kotlin.db.DbPerson
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.mapper.Dto
-import io.realm.examples.kotlin.mapper.Exclusive
 import io.realm.examples.kotlin.mapper.convertToDb
 import io.realm.examples.kotlin.mapper.generateId
 
 /**
  * @author Pablo Manzano
  * @since 01/12/16
+ *
+ * var wishList: List<Toy> = arrayListOf()
  */
 
 data class Person(override val id: String = generateId(),
                   override var sync: SyncStatus = SyncStatus.getDefault(),
                   var name: String = "",
                   var age: Int = 0,
-                  @field:Exclusive val toy: Toy? = null,
-                  @field:Exclusive var cats: List<Cat> = arrayListOf(),
-                  var wishList: List<Toy> = arrayListOf()
+                  val toy: Toy? = null,
+                  var cats: List<Cat>? = null,
+                  var wishList: List<Toy>? = null
 ) : Dto {
 
-    constructor(name: String, age: Int, toy: Toy?, cats: List<Cat>, wishList: List<Toy>) : this(
-            id = generateId(),
+    constructor(name: String, age: Int, toy: Toy?, cats: List<Cat>, wishList: List<Toy>?) : this(
+            // id = generateId(),
+            id = name,
             sync = SyncStatus.getDefault(),
             name = name,
             age = age,
@@ -48,8 +50,8 @@ data class Person(override val id: String = generateId(),
             throw IllegalArgumentException("Person name can not be blank!\nOffending instance:\n${this}")
         }
         toy?.checkValid()
-        cats.map(Cat::checkValid)
-        wishList.map(Toy::checkValid)
+        cats?.map(Cat::checkValid)
+        wishList?.map(Toy::checkValid)
         return this
     }
 

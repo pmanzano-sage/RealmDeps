@@ -19,7 +19,8 @@ data class Toy(
 
     // If client code does not provide an id, a random one is generated.
     constructor(name: String, price: Double) : this(
-            generateId(),
+            // generateId(),
+            name,
             sync = SyncStatus.getDefault(),
             name = name,
             price = price

@@ -23,7 +23,8 @@ data class Cat(
 
     // If client code does not provide an id, a random one is generated marked also as local.
     constructor(name: String, age: Int, toy: Toy?) : this(
-            generateId(),
+            // generateId(),
+            name,
             sync = SyncStatus.getDefault(),
             name = name,
             age = age,

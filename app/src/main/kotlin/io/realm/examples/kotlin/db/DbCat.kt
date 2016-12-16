@@ -30,8 +30,8 @@ open class DbCat(
         override var sync: Int = SyncStatus.getDefault().ordinal,
         open var name: String = "",
         open var age: Int = 0,
-        // When a dependency is marked as @Exclusive, its id must be generated based on the parent id.
-        @Exclusive var toy: DbToy? = null
+        // When a dependency is marked as @CascadeOnDelete, its id must be generated based on the parent id.
+        @CascadeOnDelete var toy: DbToy? = null
 ) : Db {
 
     // If client code does not provide an id, a random one is generated.

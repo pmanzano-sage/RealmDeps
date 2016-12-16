@@ -3,7 +3,6 @@ package io.realm.examples.kotlin
 import android.test.AndroidTestCase
 import io.realm.Realm
 import io.realm.RealmConfiguration
-import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.model.Cat
 import io.realm.examples.kotlin.model.Person
 import io.realm.examples.kotlin.model.Toy
@@ -22,7 +21,7 @@ class DataManagerTest : AndroidTestCase() {
     private val ball = Toy("ball", 1.0)
     private val yoyo = Toy("yo-yo", 2.0)
     private val teddy = Toy("teddy", 3.0)
-    private val rubik = Toy("rubik", 4.0)
+    private val rubik = Toy("rubik", 4.0)   // Only used by wife & husband
     private val NUM_TOYS = 4
 
     // Jake's cats
@@ -30,31 +29,41 @@ class DataManagerTest : AndroidTestCase() {
     private val shemp = Cat("Shemp", 2, yoyo)
     private val larry = Cat("Larry", 3, null)
     private val jakesCats = arrayListOf(moe, shemp, larry)
-    private val NUM_CATS_JAKE = 3
+    private val NUM_CATS_JAKE = jakesCats.size
 
     // Mary's cats
     private val oliver = Cat("Oliver", 4, teddy)
     private val leo = Cat("Leo", 5, null)
     private val marysCats = arrayListOf(oliver, leo)
-    private val NUM_CATS_MARY = 2
+    private val NUM_CATS_MARY = marysCats.size
     private val NUM_CATS_JAKE_MARY = NUM_CATS_JAKE + NUM_CATS_MARY
+    private val COMMON_CATS_JAKE_MARY = 0
 
     // Test people
     // Jake shares a toy (ball) with one of his cats.
-    private val jake = Person("1", SyncStatus.SYNC_ERROR, "Jake", 34, ball, jakesCats)
+    private val jake = Person("Jake", 34, ball, jakesCats, null)
     private val NUM_TOYS_JAKE = 2 // ball & yoyo
 
     // Mary shares a toy (ball) with Jake.
-    private val mary = Person("2", SyncStatus.SYNC_ERROR, "Mary", 30, ball, marysCats)
+    private val mary = Person("Mary", 30, ball, marysCats, null)
     private val NUM_TOYS_MARY = 2 // ball & teddy
+    private val NUM_TOYS_JACK_MARY = 3 // ball, yoyo & teddy
+    private val COMMON_TOYS_JACK_MARY = 1 // ball
 
     // Wife and Husband share the cat Tom.
     private val tom = Cat("Tom", 5, teddy)
     private val wifeCats = arrayListOf(tom)
-    private val wife = Person("3", SyncStatus.SYNC_ERROR, "Wife", 40, null, wifeCats)
+    private val NUM_CATS_WIFE = wifeCats.size
+    private val wishes = arrayListOf(rubik)
+    private val wife = Person("Wife", 40, null, wifeCats, wishes)
 
     private val husbandCats = arrayListOf(tom, leo)
-    private val husband = Person("3", SyncStatus.SYNC_ERROR, "Husband", 40, null, husbandCats)
+    private val husband = Person("Husband", 40, null, husbandCats, null)
+
+    private val NUM_CATS_HUSBAND = husbandCats.size
+    private val COMMON_CATS_WIFE_HUSBAND = 1 // tom
+    private val NUM_WISHES_WIFE = wishes.size
+    private val NUM_CATS_WIFE_HUSBAND = NUM_CATS_WIFE + NUM_CATS_HUSBAND - COMMON_CATS_WIFE_HUSBAND
 
     private val NUM_PEOPLE = 4
 
@@ -106,22 +115,31 @@ class DataManagerTest : AndroidTestCase() {
         dataManager.delete(mary)
         // Do not be tempted to check this:
         // onlyJackIsThere()
-        // Since toys are always shared, the number of toys remaining should be NUM_TOYS
+        // Since some common objects are also deleted
         checkNumPersonsIs(1)
-        checkNumCatsIs(NUM_CATS_JAKE)
-        checkNumToysIs(NUM_TOYS)
+        checkNumCatsIs(NUM_CATS_JAKE - COMMON_CATS_JAKE_MARY)
+        checkNumToysIs(NUM_TOYS_JAKE - COMMON_TOYS_JACK_MARY)
     }
 
     fun testRemoveMaryNonCascade() {
         dataManager.save(mary)
         dataManager.save(jake)
         dataManager.deleteNonCascade(mary)
-        // Do not be tempted to check this:
-        // onlyJackIsThere()
-        // Since toys are always shared, the number of toys remaining should be NUM_TOYS
+        // The same test as before, but not paying attention to cascades.
         checkNumPersonsIs(1)
         checkNumCatsIs(NUM_CATS_JAKE_MARY)
-        checkNumToysIs(NUM_TOYS)
+        checkNumToysIs(NUM_TOYS_JACK_MARY)
+    }
+
+    // Wife and Husband share the cat Tom.
+    fun testRemoveWife() {
+        dataManager.save(wife)
+        dataManager.save(husband)
+        dataManager.delete(wife)
+        checkNumPersonsIs(1)
+        checkNumCatsIs(NUM_CATS_WIFE_HUSBAND - COMMON_CATS_WIFE_HUSBAND)
+        // Toys in the wish list are not deleted because they don't have a @CascadeOnDelete
+        checkNumToysIs(NUM_WISHES_WIFE)
     }
 
     //region Auxiliary functions
@@ -129,7 +147,7 @@ class DataManagerTest : AndroidTestCase() {
     private fun onlyJackAndMary() {
         checkNumPersonsIs(2)
         checkNumCatsIs(NUM_CATS_JAKE_MARY)
-        checkNumToysIs(NUM_TOYS)
+        checkNumToysIs(NUM_TOYS_JACK_MARY)
     }
 
     private fun onlyJackIsThere() {

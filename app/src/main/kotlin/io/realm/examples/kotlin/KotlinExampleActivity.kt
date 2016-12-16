@@ -43,7 +43,7 @@ import kotlin.system.measureTimeMillis
  *
  * To Do
  *
- * - La anotacion "Exclusive" para los campos. Hacerla y testearla.
+ * - La anotacion "CascadeOnDelete" para los campos. Hacerla y testearla.
  * - Probar borrar objetos con listas que no implementen BackLink. Mirar que no las borre.
  * - Usar delegates para desacoplar algo más los mappers.
  * - Separar los casos de test por entidades.

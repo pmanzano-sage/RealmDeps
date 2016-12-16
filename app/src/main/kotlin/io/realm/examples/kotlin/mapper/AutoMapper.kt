@@ -16,7 +16,7 @@ import java.util.*
  */
 
 @Target(AnnotationTarget.FIELD)
-annotation class Exclusive
+annotation class CascadeOnDelete
 
 interface Dto {
     val id: String
@@ -96,10 +96,6 @@ fun <F, T> F.convertToDb(fromClazz: Class<F>, toClazz: Class<T>): T {
                     setMethod.invoke(instance, value.ordinal)
                 }
                 Dto::class.java.isAssignableFrom(type) -> {
-                    // We can also detect annotations in the field.
-//                    if (targetField.isAnnotationPresent(Exclusive::class.java)) {
-//                        Log.d(TAG, "Field '${targetField.name}' is Exclusive")
-//                    }
                     // Get the object from the source field, and convert it to DTO.
                     val dtoObject = field.get(this) as? Dto
                     // Set the Db object to the target field
@@ -108,14 +104,10 @@ fun <F, T> F.convertToDb(fromClazz: Class<F>, toClazz: Class<T>): T {
                     dtoObject?.toDb().let { targetField.set(instance, it) }
                 }
                 List::class.java.isAssignableFrom(type) -> {
-                    // We can also detect annotations in the field.
-//                    if (targetField.isAnnotationPresent(Exclusive::class.java)) {
-//                        Log.d(TAG, "List field '${targetField.name}' is Exclusive")
-//                    }
                     // Get the list from the source field
-                    val list = field.get(this) as List<*>
+                    val list = field.get(this) as? List<*>
                     val dbList = RealmList<RealmModel>()
-                    list.map { it as Dto }.mapTo(dbList, Dto::toDb)
+                    list?.map { it as Dto }?.mapTo(dbList, Dto::toDb)
                     // Set the DTO list to the target field
                     val targetField = toClazz.getDeclaredField(field.name)
                     targetField.isAccessible = true
@@ -197,7 +189,7 @@ fun <F, T> F.convertToDto(fromClazz: Class<in F>, toClazz: Class<out T>): T {
 fun Db.deleteCascade(clazz: Class<out Db>, realm: Realm, level: Int = 0): Boolean {
     var success = true
     val TAG = "deleteCascade"
-    val TAB = "  "
+    val TAB = "    "
     val fields = clazz.declaredFields
 
     // Take the object out of Realm, otherwise realm proxy object will show us an empty instance.
@@ -210,15 +202,16 @@ fun Db.deleteCascade(clazz: Class<out Db>, realm: Realm, level: Int = 0): Boolea
         field.isAccessible = true
         try {
             val type = field.type
+            val cascade = field.isAnnotationPresent(CascadeOnDelete::class.java)
             when {
-                Db::class.java.isAssignableFrom(type) && BackLink::class.java.isAssignableFrom(type) -> {
+                Db::class.java.isAssignableFrom(type) && (BackLink::class.java.isAssignableFrom(type) || cascade) -> {
                     // Get the object from the source field, and delete it
                     val dbObject = field.get(myself) as? Db
-                    Log.w(TAG, "${TAB.repeat(level)} Object '${field.name}'")
+                    Log.w(TAG, "${TAB.repeat(level)} Object '${field.name}':")
                     // First of all, delete that object dependencies
                     dbObject?.deleteCascade(dbObject.javaClass, realm, level.inc())
                 }
-                RealmList::class.java.isAssignableFrom(type) -> {
+                RealmList::class.java.isAssignableFrom(type) && cascade -> {
                     val list = field.get(myself) as RealmList<*>
                     Log.w(TAG, "${TAB.repeat(level)} List '${field.name}': ${list.size} items")
                     // Get the list from the source field, and deleteCascade all the entities in the list.
