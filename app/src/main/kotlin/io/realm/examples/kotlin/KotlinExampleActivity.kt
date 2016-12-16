@@ -26,14 +26,14 @@ import io.realm.RealmList
 import io.realm.RealmObject
 import io.realm.Sort
 import io.realm.examples.kotlin.db.DbCat
-import io.realm.examples.kotlin.db.DbDog
 import io.realm.examples.kotlin.db.DbPerson
+import io.realm.examples.kotlin.db.DbToy
 import io.realm.examples.kotlin.dto.Account
 import io.realm.examples.kotlin.dto.AccountType
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.model.Cat
-import io.realm.examples.kotlin.model.Dog
 import io.realm.examples.kotlin.model.Person
+import io.realm.examples.kotlin.model.Toy
 import io.realm.exceptions.RealmPrimaryKeyConstraintException
 import kotlin.properties.Delegates
 import kotlin.system.measureTimeMillis
@@ -43,8 +43,12 @@ import kotlin.system.measureTimeMillis
  *
  * To Do
  *
+ * - La anotacion "Exclusive" para los campos. Hacerla y testearla.
  * - Probar borrar objetos con listas que no implementen BackLink. Mirar que no las borre.
  * - Usar delegates para desacoplar algo más los mappers.
+ * - Separar los casos de test por entidades.
+ * - Hacer que el DTO de factura permita agregar y quitar pagos/lineas.
+ * - Pensar un poco el tema de las 2 bases de datos.
  *
  * - Implementar la solucion para los partially filled-in entities.
  * - Luego escribir unas cuantas pruebas del DataManager.
@@ -78,16 +82,16 @@ class KotlinExampleActivity : Activity() {
     private var dataManager: DataManager by Delegates.notNull()
 
     // Basic person to work with
-    val doggy = DbDog("doggy", 66)
-    val myDog = DbDog("Butcher", 9)
-    val myCats = RealmList<DbCat>(DbCat("Michifus", 1, null), DbCat("Pepa", 2, doggy), DbCat("Flora", 3, null))
-    val dbPerson = DbPerson("111", SyncStatus.SYNC_SUCCESS.ordinal, "Pablo", 35, myDog, myCats)
+    val ball = DbToy("ball", 10)
+    val teddy = DbToy("teddy", 2)
+    val myCats = RealmList<DbCat>(DbCat("Michifus", 1, null), DbCat("Pepa", 2, ball), DbCat("Flora", 3, null))
+    val dbPerson = DbPerson("111", SyncStatus.SYNC_SUCCESS.ordinal, "Pablo", 35, teddy, myCats)
     val numPersons = 100
 
     // Basic person model
-    val aDog = Dog("Spike", 5)
-    val someCats = arrayListOf(Cat("Moe", 4, null), Cat("Shemp", 5, aDog), Cat("Larry", 6, null))
-    val jake = Person("1", SyncStatus.SYNC_ERROR, "Jake", 34, aDog, someCats)
+    val yoyo = Toy("yo-yo", 5.0)
+    val someCats = arrayListOf(Cat("Moe", 4, null), Cat("Shemp", 5, yoyo), Cat("Larry", 6, null))
+    val jake = Person("1", SyncStatus.SYNC_ERROR, "Jake", 34, yoyo, someCats)
 
     // Some entities from One
 
@@ -112,7 +116,7 @@ class KotlinExampleActivity : Activity() {
         // to forget to commit the transaction.
         realm.executeTransaction {
             realm.delete(DbPerson::class.java)
-            realm.delete(DbDog::class.java)
+            realm.delete(DbToy::class.java)
             realm.delete(DbCat::class.java)
         }
 
@@ -189,7 +193,7 @@ class KotlinExampleActivity : Activity() {
 //            ok = dataManager.create(jake)
 //            showStatus("Jake created: $ok")
 //
-//            ok = dataManager.delete(aDog)
+//            ok = dataManager.delete(yoyo)
 //            showStatus("Spike deleted: $ok")
 //
 //            val jake2 = dataManager.find(Person::class.java, jake.id)
@@ -230,8 +234,8 @@ class KotlinExampleActivity : Activity() {
     private fun attemptToCreateInvalidPerson(realm: Realm) {
         showStatus("Attempt to create invalid person...")
         val personName = "J"
-        val dog = DbDog("")
-        val cats = RealmList<DbCat>(DbCat("Michifus", 1, null), DbCat("", 2, doggy), DbCat("Flora", 3, null))
+        val dog = DbToy("")
+        val cats = RealmList<DbCat>(DbCat("Michifus", 1, null), DbCat("", 2, ball), DbCat("Flora", 3, null))
         val p1 = DbPerson("666", SyncStatus.getDefault().ordinal, personName, 20, dog, cats)
 
         if (p1.readyToSave()) {
@@ -248,22 +252,22 @@ class KotlinExampleActivity : Activity() {
 
 
     /**
-     * - New dog "Cockie"
-     * - Two persons having the SAME dog
+     * - New toy "Cockie"
+     * - Two persons having the SAME toy
      */
     private fun twoItemsPointingToTheSameDep(realm: Realm) {
         showStatus("twoItemsPointingToTheSameDep...")
         val dogName = "Cockie"
         realm.executeTransaction {
-            val dog = DbDog(dogName)
+            val dog = DbToy(dogName)
             val p1 = DbPerson("789", SyncStatus.getDefault().ordinal, "Pedro", 20, dog)
             realm.copyToRealmOrUpdate(p1)
 
-            val cockie = realm.where(DbDog::class.java).equalTo("name", dogName).findFirst()
+            val cockie = realm.where(DbToy::class.java).equalTo("name", dogName).findFirst()
             val p2 = DbPerson("790", SyncStatus.getDefault().ordinal, "Jose", 20, cockie)
             realm.copyToRealmOrUpdate(p2)
         }
-        val numCockies = realm.where(DbDog::class.java).equalTo("name", dogName).findAll().count()
+        val numCockies = realm.where(DbToy::class.java).equalTo("name", dogName).findAll().count()
         showStatus("#Cockies=$numCockies")
     }
 
@@ -338,13 +342,13 @@ class KotlinExampleActivity : Activity() {
 
         // All writes must be wrapped in a transaction to facilitate safe multi threading
         realm.executeTransaction {
-            val dog = DbDog("Butcher", 99)
-            val lacie = DbDog("Lacie", 5)
-            val dog33 = DbDog("33", SyncStatus.NEEDS_SYNC_CREATE.ordinal, "Dog33", 33)
-            val cats = arrayOf(DbCat("michifus", 88, dog33), DbCat("Pepa", 77, lacie), DbCat("Flora", 66, dog))
+            val toy1 = DbToy("toy1", 1.0)
+            val toy2 = DbToy("toy2", 2.0)
+            val toy3 = DbToy("toy3", SyncStatus.NEEDS_SYNC_CREATE.ordinal, "toy3", 3.0)
+            val cats = arrayOf(DbCat("michifus", 88, toy3), DbCat("Pepa", 77, toy2), DbCat("Flora", 66, toy1))
             val rcats = RealmList<DbCat>()
             rcats.addAll(cats)
-            val p1 = DbPerson("567", SyncStatus.SYNC_SUCCESS.ordinal, "Juan", 15, dog, rcats)
+            val p1 = DbPerson("567", SyncStatus.SYNC_SUCCESS.ordinal, "Juan", 15, toy1, rcats)
 
             // Another option is create the person with an empty list associated, and then
             // get the list, clear it, and add all the items.
@@ -355,7 +359,7 @@ class KotlinExampleActivity : Activity() {
             realm.copyToRealmOrUpdate(p1)
 
             try {
-                val p2 = DbPerson("567", SyncStatus.SYNC_SUCCESS.ordinal, "Pedro", 25, lacie, RealmList<DbCat>())
+                val p2 = DbPerson("567", SyncStatus.SYNC_SUCCESS.ordinal, "Pedro", 25, toy2, RealmList<DbCat>())
                 realm.copyToRealm(p2)
                 // realm.copyToRealmOrUpdate(p2)
             } catch (e: RealmPrimaryKeyConstraintException) {
@@ -365,9 +369,9 @@ class KotlinExampleActivity : Activity() {
         }
 
         // Find the first person (no query conditions) and read a field
-        val person = realm.where(DbPerson::class.java).equalTo("age", 25).findFirst()
+        val person = realm.where(DbPerson::class.java).equalTo("price", 25).findFirst()
         if (person != null) {
-            showStatus(person.name + " found.  age=" + person.age)
+            showStatus(person.name + " found.  price=" + person.age)
 
             // Update person in a transaction
             realm.executeTransaction {
@@ -378,14 +382,14 @@ class KotlinExampleActivity : Activity() {
 
         }
 
-        // Look for a person that has a certain dog
+        // Look for a person that has a certain toy
         realm.executeTransaction {
-            val myperson = realm.where(DbPerson::class.java).equalTo("dog.name", "Lacie").findFirst()
+            val myperson = realm.where(DbPerson::class.java).equalTo("toy.name", "Lacie").findFirst()
             if (myperson != null) {
                 myperson.age = 55
                 showStatus(myperson.name + " is now " + myperson.age)
             } else {
-                showStatus("No person found with a dog called Lacie")
+                showStatus("No person found with a toy called Lacie")
             }
         }
 
@@ -409,7 +413,7 @@ class KotlinExampleActivity : Activity() {
         showStatus("\nPerforming basic Query operation...")
         showStatus("Number of persons: ${realm.where(DbPerson::class.java).count()}")
 
-        val results = realm.where(DbPerson::class.java).equalTo("age", 99).findAll()
+        val results = realm.where(DbPerson::class.java).equalTo("price", 99).findAll()
 
         showStatus("Size of result set: " + results.size)
     }
@@ -432,14 +436,14 @@ class KotlinExampleActivity : Activity() {
 
         // Add ten persons in one transaction
         realm.executeTransaction {
-            val fido = realm.createObject(DbDog::class.java)
+            val fido = realm.createObject(DbToy::class.java)
             fido.name = "fido"
             for (i in 0..9) {
                 val person = realm.createObject(DbPerson::class.java)
                 // person.id = i.toString()
                 person.name = "DbPerson no. $i"
                 person.age = i
-                person.dog = fido
+                person.toy = fido
 
                 // The field tempReference is annotated with @Ignore.
                 // This means setTempReference sets the DbPerson tempReference
@@ -460,7 +464,7 @@ class KotlinExampleActivity : Activity() {
 
         // Iterate over all objects
         for (person in realm.where(DbPerson::class.java).findAll()) {
-            val dogName: String = person?.dog?.name ?: "None"
+            val dogName: String = person?.toy?.name ?: "None"
 
             status += "\n${person.name}: ${person.age} : $dogName : ${person.cats.size}"
 
@@ -471,7 +475,7 @@ class KotlinExampleActivity : Activity() {
         }
 
         // Sorting
-        val sortedPersons = realm.where(DbPerson::class.java).findAllSorted("age", Sort.DESCENDING)
+        val sortedPersons = realm.where(DbPerson::class.java).findAllSorted("price", Sort.DESCENDING)
         check(realm.where(DbPerson::class.java).findAll().last().name == sortedPersons.first().name)
         status += "\nSorting ${sortedPersons.last().name} == ${realm.where(DbPerson::class.java).findAll().first().name}"
 
@@ -488,10 +492,10 @@ class KotlinExampleActivity : Activity() {
             // 'it' is the implicit lambda parameter of type Realm
             status += "\nNumber of persons: ${it.where(DbPerson::class.java).count()}"
 
-            // Find all persons where age between 7 and 9 and name begins with "DbPerson".
+            // Find all persons where price between 7 and 9 and name begins with "DbPerson".
             val results = it
                     .where(DbPerson::class.java)
-                    .between("age", 7, 9)       // Notice implicit "and" operation
+                    .between("price", 7, 9)       // Notice implicit "and" operation
                     .beginsWith("name", "DbPerson")
                     .findAll()
 

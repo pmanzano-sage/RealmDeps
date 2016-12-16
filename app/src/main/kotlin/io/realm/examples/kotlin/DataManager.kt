@@ -2,6 +2,7 @@ package io.realm.examples.kotlin
 
 import android.util.Log
 import io.realm.Realm
+import io.realm.RealmObject
 import io.realm.examples.kotlin.dto.definition.StringUtils
 import io.realm.examples.kotlin.mapper.Db
 import io.realm.examples.kotlin.mapper.Dto
@@ -104,6 +105,21 @@ class DataManager(realm: Realm) : PersistenceProvider {
         }
         return success
     }
+
+    /**
+     * Delete an entity without cascading the deletion to its dependencies.
+     */
+    fun deleteNonCascade(dto: Dto): Boolean {
+        var success = false
+        realm.executeTransaction {
+            val dbEntity = findDb(dto.getDbClass(), dto.id)
+            Log.d(TAG, "deleteNonCascade: dbEntity=$dbEntity")
+            RealmObject.deleteFromRealm(dbEntity)
+            success = true
+        }
+        return success
+    }
+
 
     /**
      * Create or update an entity.

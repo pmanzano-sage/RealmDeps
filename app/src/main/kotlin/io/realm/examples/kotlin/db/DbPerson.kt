@@ -26,9 +26,8 @@ import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.mapper.*
 import io.realm.examples.kotlin.model.Person
 
-// Your model has to extend RealmObject. Furthermore, the class and all of the
-// properties must be annotated with open (Kotlin classes and methods are final
-// by default).
+// Your model has to extend RealmObject or be annotated with @RealmClass. Furthermore, the class and all of the
+// properties must be annotated with open (Kotlin classes and methods are final by default).
 
 @RealmClass
 open class DbPerson(
@@ -47,11 +46,13 @@ open class DbPerson(
 
         // Other objects in a one-to-one relation must also subclass RealmObject
         @field:Exclusive
-        open var dog: DbDog? = null,
+        open var toy: DbToy? = null,
 
         // One-to-many relations is simply a RealmList of the objects which also subclass RealmObject
         @field:Exclusive
         open var cats: RealmList<DbCat> = RealmList(),
+
+        open var wishList: RealmList<DbToy> = RealmList(),
 
         // You can instruct Realm to ignore a field and not persist it.
         @Ignore open var tempReference: Int = 0
@@ -61,24 +62,25 @@ open class DbPerson(
     // Realm will overload them and code inside them is ignored.
     // So if you prefer you can also just have empty abstract methods.
 
-    constructor(name: String, age: Int, dog: DbDog?, cats: RealmList<DbCat>) : this(
+    constructor(name: String, age: Int, toy: DbToy?, cats: RealmList<DbCat>, wishList: RealmList<DbToy>) : this(
             id = generateId(),
             sync = SyncStatus.getDefault().ordinal,
             name = name,
             age = age,
-            dog = dog,
-            cats = cats)
+            toy = toy,
+            cats = cats,
+            wishList = wishList)
 
     override fun getDtoClass(): Class<out Person> {
         return Person::class.java
     }
 
     override fun readyToSave(): Boolean {
-        return name.isNotEmpty() && (dog == null || dog!!.readyToSave()) && cats.fold(true) { ready, next -> ready && next.readyToSave() }
+        return name.isNotEmpty() && (toy == null || toy!!.readyToSave()) && cats.fold(true) { ready, next -> ready && next.readyToSave() }
     }
 
     override fun toString(): String {
-        return "DbPerson( id=$id, name=$name, age=$age, dog=$dog, cats=${cats.joinToString(transform = DbCat::toString, prefix = "[", postfix = "]")})"
+        return "DbPerson( id=$id, name=$name, price=$age, toy=$toy, cats=${cats.joinToString(transform = DbCat::toString, prefix = "[", postfix = "]")}, wishList=, cats=${wishList.joinToString(transform = DbToy::toString, prefix = "[", postfix = "]")})"
     }
 
     override fun toDto(): Person {

@@ -19,15 +19,15 @@ data class Cat(
         override var sync: SyncStatus = SyncStatus.getDefault(),
         var name: String = "",
         var age: Int = 0,
-        var dog: Dog? = null) : Dto {
+        var toy: Toy? = null) : Dto {
 
     // If client code does not provide an id, a random one is generated marked also as local.
-    constructor(name: String, age: Int, dog: Dog?) : this(
+    constructor(name: String, age: Int, toy: Toy?) : this(
             generateId(),
             sync = SyncStatus.getDefault(),
             name = name,
             age = age,
-            dog = dog
+            toy = toy
     )
 
     override fun getDbClass(): Class<out DbCat> {

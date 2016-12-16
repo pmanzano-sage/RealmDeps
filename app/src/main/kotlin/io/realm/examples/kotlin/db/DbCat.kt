@@ -31,16 +31,16 @@ open class DbCat(
         open var name: String = "",
         open var age: Int = 0,
         // When a dependency is marked as @Exclusive, its id must be generated based on the parent id.
-        @Exclusive var dog: DbDog? = null
+        @Exclusive var toy: DbToy? = null
 ) : Db {
 
     // If client code does not provide an id, a random one is generated.
-    constructor(name: String, age: Int, dog: DbDog?) : this(
+    constructor(name: String, age: Int, toy: DbToy?) : this(
             generateId(),
             sync = SyncStatus.getDefault().ordinal,
             name = name,
             age = age,
-            dog = dog
+            toy = toy
     )
 
     override fun getDtoClass(): Class<out Cat> {
@@ -48,11 +48,11 @@ open class DbCat(
     }
 
     override fun readyToSave(): Boolean {
-        return name.isNotEmpty() && (dog == null || dog!!.readyToSave())
+        return name.isNotEmpty() && (toy == null || toy!!.readyToSave())
     }
 
     override fun toString(): String {
-        return "DbCat(name=$name, age=$age, dog=$dog)"
+        return "DbCat(name=$name, price=$age, toy=$toy)"
     }
 
     override fun toDto(): Cat {

@@ -25,26 +25,26 @@ import io.realm.examples.kotlin.mapper.Db
 import io.realm.examples.kotlin.mapper.convertToDto
 import io.realm.examples.kotlin.mapper.deleteCascade
 import io.realm.examples.kotlin.mapper.generateId
-import io.realm.examples.kotlin.model.Dog
+import io.realm.examples.kotlin.model.Toy
 
 @RealmClass
-open class DbDog(
+open class DbToy(
         @PrimaryKey @Required override var id: String = generateId(),
         override var sync: Int = SyncStatus.getDefault().ordinal,
         open var name: String = "",
-        open var age: Int = 0
+        open var price: Double = 0.0
 ) : Db {
 
     // If client code does not provide an id, a random one is generated.
-    constructor(name: String, age: Int) : this(
+    constructor(name: String, price: Double) : this(
             generateId(),
             sync = SyncStatus.getDefault().ordinal,
             name = name,
-            age = age
+            price = price
     )
 
-    override fun getDtoClass(): Class<out Dog> {
-        return Dog::class.java
+    override fun getDtoClass(): Class<out Toy> {
+        return Toy::class.java
     }
 
     override fun readyToSave(): Boolean {
@@ -52,14 +52,14 @@ open class DbDog(
     }
 
     override fun toString(): String {
-        return "DbDog(name=$name, age=$age)"
+        return "DbToy(name=$name, price=$price)"
     }
 
-    override fun toDto(): Dog {
-        return convertToDto(DbDog::class.java, getDtoClass())
+    override fun toDto(): Toy {
+        return convertToDto(DbToy::class.java, getDtoClass())
     }
 
     override fun delete(realm: Realm): Boolean {
-        return deleteCascade(DbDog::class.java, realm)
+        return deleteCascade(DbToy::class.java, realm)
     }
 }

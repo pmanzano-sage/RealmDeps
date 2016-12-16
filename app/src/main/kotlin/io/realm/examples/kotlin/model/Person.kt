@@ -16,16 +16,20 @@ data class Person(override val id: String = generateId(),
                   override var sync: SyncStatus = SyncStatus.getDefault(),
                   var name: String = "",
                   var age: Int = 0,
-                  @field:Exclusive val dog: Dog? = null,
-                  @field:Exclusive var cats: List<Cat> = arrayListOf()) : Dto {
+                  @field:Exclusive val toy: Toy? = null,
+                  @field:Exclusive var cats: List<Cat> = arrayListOf(),
+                  var wishList: List<Toy> = arrayListOf()
+) : Dto {
 
-    constructor(name: String, age: Int, dog: Dog?, cats: List<Cat>) : this(
+    constructor(name: String, age: Int, toy: Toy?, cats: List<Cat>, wishList: List<Toy>) : this(
             id = generateId(),
             sync = SyncStatus.getDefault(),
             name = name,
             age = age,
-            dog = dog,
-            cats = cats)
+            toy = toy,
+            cats = cats,
+            wishList = wishList
+    )
 
     override fun getDbClass(): Class<out DbPerson> {
         return DbPerson::class.java
@@ -43,8 +47,9 @@ data class Person(override val id: String = generateId(),
         if (name.isBlank()) {
             throw IllegalArgumentException("Person name can not be blank!\nOffending instance:\n${this}")
         }
-        dog?.checkValid()
+        toy?.checkValid()
         cats.map(Cat::checkValid)
+        wishList.map(Toy::checkValid)
         return this
     }
 
