@@ -43,7 +43,7 @@ import kotlin.system.measureTimeMillis
  *
  * To Do
  *
- * - La anotacion "CascadeOnDelete" para los campos. Hacerla y testearla.
+
  * - Probar borrar objetos con listas que no implementen BackLink. Mirar que no las borre.
  * - Usar delegates para desacoplar algo más los mappers.
  * - Separar los casos de test por entidades.
@@ -57,7 +57,7 @@ import kotlin.system.measureTimeMillis
  * - Use copyFromRealm to ensure that we work with unmanaged entities.
  *
  * Done
- *
+ * - Implement a "CascadeOnDelete" annotation
  * - Add Instrumentation tests & Junit.
  * - Come up with a solution for cascade deletion.
  * - Code some convenience factories for the Dtos.

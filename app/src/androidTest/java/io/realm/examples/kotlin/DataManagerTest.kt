@@ -11,9 +11,8 @@ import junit.framework.Assert
 /**
  * @author Pablo Manzano
  *
- * Test cases for DataManager.
+ * Test cases with dummy entities for DataManager.
  *
- * -
  */
 class DataManagerTest : AndroidTestCase() {
 
@@ -109,6 +108,11 @@ class DataManagerTest : AndroidTestCase() {
         onlyJackAndMary()
     }
 
+    /**
+     * In order to understand these test cases you have to inspect the Db entities, and check
+     * which fields are annotated with @CascadeOnDelete.
+     * Depending on these annotations and the object hierarchy the result of this test may vary.
+     */
     fun testRemoveMary() {
         dataManager.save(mary)
         dataManager.save(jake)
@@ -121,6 +125,11 @@ class DataManagerTest : AndroidTestCase() {
         checkNumToysIs(NUM_TOYS_JAKE - COMMON_TOYS_JACK_MARY)
     }
 
+    /**
+     * This is the same test case as before, but using the standard way provided by Realm
+     * to delete objects.
+     * In this way you can compare both results.
+     */
     fun testRemoveMaryNonCascade() {
         dataManager.save(mary)
         dataManager.save(jake)
@@ -131,8 +140,11 @@ class DataManagerTest : AndroidTestCase() {
         checkNumToysIs(NUM_TOYS_JACK_MARY)
     }
 
-    // Wife and Husband share the cat Tom.
+    /**
+     * Check that lists without @CascadeOnDelete are not touched on deletions.
+     */
     fun testRemoveWife() {
+        // Wife and Husband share the cat Tom.
         dataManager.save(wife)
         dataManager.save(husband)
         dataManager.delete(wife)
