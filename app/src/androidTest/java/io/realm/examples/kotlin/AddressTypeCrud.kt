@@ -4,8 +4,10 @@ import android.test.AndroidTestCase
 import io.realm.Realm
 import io.realm.RealmConfiguration
 import io.realm.examples.kotlin.data.DataManager
+import io.realm.examples.kotlin.data.Dto
 import io.realm.examples.kotlin.data.RealmDataManager
 import io.realm.examples.kotlin.dto.AddressType
+import io.realm.examples.kotlin.dto.ContactPersonType
 import junit.framework.Assert
 
 /**
@@ -78,6 +80,12 @@ class AddressTypeCrud : AndroidTestCase() {
 //    }
 
 
+    fun testCreateIdOnlyEntity() {
+        val contactPersonType = createIdOnlyEntity(ContactPersonType::class.java, "ACCOUNTS")
+        dataManager.save(contactPersonType)
+    }
+
+
     //region Auxiliary functions
 
     private fun checkNumAddressTypesIs(numContacts: Int) {
@@ -85,6 +93,16 @@ class AddressTypeCrud : AndroidTestCase() {
         val personsTypes = dataManager.getAll(AddressType::class.java)
         Assert.assertNotNull(personsTypes)
         Assert.assertEquals(numContacts, personsTypes.size)
+    }
+
+    private fun <T : Dto> createIdOnlyEntity(clazz: Class<T>, id: String): Dto {
+        // val ctor = clazz.getConstructor(String::class.java)
+        val ctor = clazz.constructors.first()
+        val dto = ctor.newInstance()
+        val field = clazz.declaredFields[0]
+        field.isAccessible = true
+        field.set(dto, id)
+        return dto as T
     }
 
     //endregion

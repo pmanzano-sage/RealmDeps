@@ -28,6 +28,9 @@ import kotlin.properties.Delegates
 /**
  *
  * To Do
+ * - Cuando no se provee un id a la hora de crear una entity quiere decir que está sólo en local.
+ *   Hacer esto con el SyncStatus.
+ * - Pruebas para que salten las exceptions cuando las entities son invalidas.
  * - Implementar la solucion para los partially filled-in entities.
  * - Cuando estamos creando una entidad local, podríamos mirar los @CascadeOnDelete y usar el id
  *   del padre para todas estas dependencias...
