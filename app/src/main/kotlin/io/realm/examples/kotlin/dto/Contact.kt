@@ -1,11 +1,10 @@
 package io.realm.examples.kotlin.dto
 
-import io.realm.examples.kotlin.dto.definition.Constants
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.entity.RealmContact
-import io.realm.examples.kotlin.mapper.Dto
-import io.realm.examples.kotlin.mapper.convertToDb
-import io.realm.examples.kotlin.mapper.generateId
+import io.realm.examples.kotlin.data.Dto
+import io.realm.examples.kotlin.data.convertToDb
+import io.realm.examples.kotlin.data.generateId
 
 /**
  * Common Contact model
@@ -13,15 +12,12 @@ import io.realm.examples.kotlin.mapper.generateId
 data class Contact(
         override val id: String = generateId(),
         override var sync: SyncStatus = SyncStatus.getDefault(),
+        var contactTypes: List<ContactType>? = null,
         var name: String? = "",
-        var emailAddress: String? = "",
-        var phoneNumber: String = "",
-        var phoneNumber2: String = "",
-        var photoUri: String? = null,
-        var address: Address? = null,
-        var sourceId: String? = "",
-        var company: String? = "",
-        var contactType: ContactType
+        var reference: String? = "",
+        var mainAddress: Address? = null,
+        var deliveryAddress: Address? = null,
+        var mainContactPerson: ContactPerson? = null
 ) : Dto {
 
     override fun getDbClass(): Class<out RealmContact> {
@@ -32,11 +28,13 @@ data class Contact(
         if (name!!.isBlank()) {
             throw IllegalArgumentException("Contact name can not be blank!\nOffending instance:\n${this}")
         }
-        contactType.checkValid()
+        mainAddress?.checkValid()
+        deliveryAddress?.checkValid()
+        contactTypes?.map { it.checkValid() }
         return this
     }
 
-    override fun toDb(): RealmContact {
+    override fun toDbModel(): RealmContact {
         return convertToDb(Contact::class.java, getDbClass())
     }
 
@@ -44,9 +42,11 @@ data class Contact(
         return name ?: ""
     }
 
-    fun fixCompanyName() {
-        if (!company.isNullOrEmpty() && company.equals(Constants.CONTACTS_COMPANY_DEFAULT)) {
-            company = ""
+    // Convenient factory methods for V3
+    companion object {
+
+        fun create(types: List<ContactType>, name: String, ref: String, mainAddress: Address?, deliveryAddress: Address?, mainContactPerson: ContactPerson?): Contact {
+            return Contact(generateId(), SyncStatus.getDefault(), types, name, ref, mainAddress, deliveryAddress, mainContactPerson)
         }
     }
 }

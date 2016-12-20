@@ -3,9 +3,11 @@ package io.realm.examples.kotlin
 import android.test.AndroidTestCase
 import io.realm.Realm
 import io.realm.RealmConfiguration
-import io.realm.examples.kotlin.model.Cat
-import io.realm.examples.kotlin.model.Person
-import io.realm.examples.kotlin.model.Toy
+import io.realm.examples.kotlin.data.DataManager
+import io.realm.examples.kotlin.data.RealmDataManager
+import io.realm.examples.kotlin.dummy.model.Cat
+import io.realm.examples.kotlin.dummy.model.Person
+import io.realm.examples.kotlin.dummy.model.Toy
 import junit.framework.Assert
 
 /**
@@ -79,7 +81,7 @@ class DataManagerTest : AndroidTestCase() {
         Realm.init(getContext())
         val realmConfig = RealmConfiguration.Builder().deleteRealmIfMigrationNeeded().build()
         Realm.setDefaultConfiguration(realmConfig)
-        dataManager = DataManager(Realm.getDefaultInstance())
+        dataManager = RealmDataManager(Realm.getDefaultInstance())
 
         // Note that we are deleting all the entities before launching any test
         dataManager.deleteAll()
@@ -109,7 +111,7 @@ class DataManagerTest : AndroidTestCase() {
     }
 
     /**
-     * In order to understand these test cases you have to inspect the Db entities, and check
+     * In order to understand these test cases you have to inspect the DbModel entities, and check
      * which fields are annotated with @CascadeOnDelete.
      * Depending on these annotations and the object hierarchy the result of this test may vary.
      */

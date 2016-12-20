@@ -1,12 +1,13 @@
 package io.realm.examples.kotlin.entity
 
-import io.realm.Realm
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
 import io.realm.examples.kotlin.dto.Transaction
 import io.realm.examples.kotlin.dto.definition.SyncStatus
-import io.realm.examples.kotlin.mapper.*
+import io.realm.examples.kotlin.data.DbModel
+import io.realm.examples.kotlin.data.convertToDto
+import io.realm.examples.kotlin.data.generateId
 import java.util.*
 
 @RealmClass
@@ -30,9 +31,9 @@ open class RealmTransaction(
         open var contact: RealmContact? = null,
         open var isReadonly: Boolean = false,
         open var timestamp: String = ""
-) : Db {
+) : DbModel {
 
-    override fun toDto(): Dto {
+    override fun toDto(): Transaction {
         return convertToDto(RealmTransaction::class.java, getDtoClass())
     }
 
@@ -42,10 +43,6 @@ open class RealmTransaction(
 
     override fun getDtoClass(): Class<out Transaction> {
         return Transaction::class.java
-    }
-
-    override fun delete(realm: Realm): Boolean {
-        return deleteCascade(RealmTransaction::class.java, realm)
     }
 
 }

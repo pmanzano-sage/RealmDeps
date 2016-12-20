@@ -2,9 +2,10 @@ package io.realm.examples.kotlin.dto
 
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.entity.RealmContactType
-import io.realm.examples.kotlin.mapper.Dto
-import io.realm.examples.kotlin.mapper.convertToDb
-import io.realm.examples.kotlin.mapper.generateId
+import io.realm.examples.kotlin.data.Dto
+import io.realm.examples.kotlin.data.convertToDb
+import io.realm.examples.kotlin.data.generateId
+import java.util.*
 
 /**
  * Common Contact Type model
@@ -27,7 +28,7 @@ data class ContactType(
         return this
     }
 
-    override fun toDb(): RealmContactType {
+    override fun toDbModel(): RealmContactType {
         return convertToDb(ContactType::class.java, getDbClass())
     }
 
@@ -35,8 +36,22 @@ data class ContactType(
         return name
     }
 
+    // Convenient factory methods for V3
     companion object {
-        val SYMBOL_SUPPLIER = "SUPPLIER"
-        val SYMBOL_CUSTOMER = "CUSTOMER"
+
+        enum class V3 {
+            DELIVERY,
+            ACCOUNTS,
+            SALES,
+            PURCHASING
+        }
+
+        fun create(type: V3): ContactType {
+            return ContactType(type.name, SyncStatus.getDefault(), type.name.toLowerCase().replace('_', ' '), type.name)
+        }
+
+        fun createList(types: ArrayList<V3>): List<ContactType> {
+            return types.map { ContactType.create(it) }
+        }
     }
 }

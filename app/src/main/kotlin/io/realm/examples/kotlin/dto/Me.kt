@@ -2,9 +2,9 @@ package io.realm.examples.kotlin.dto
 
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.entity.RealmMe
-import io.realm.examples.kotlin.mapper.Dto
-import io.realm.examples.kotlin.mapper.convertToDb
-import io.realm.examples.kotlin.mapper.generateId
+import io.realm.examples.kotlin.data.Dto
+import io.realm.examples.kotlin.data.convertToDb
+import io.realm.examples.kotlin.data.generateId
 
 /**
  * Common Me model
@@ -26,7 +26,7 @@ data class Me(
         return this
     }
 
-    override fun toDb(): RealmMe {
+    override fun toDbModel(): RealmMe {
         return convertToDb(Me::class.java, getDbClass())
     }
 

@@ -2,9 +2,9 @@ package io.realm.examples.kotlin.dto
 
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.entity.RealmSalesInvoice
-import io.realm.examples.kotlin.mapper.Dto
-import io.realm.examples.kotlin.mapper.convertToDb
-import io.realm.examples.kotlin.mapper.generateId
+import io.realm.examples.kotlin.data.Dto
+import io.realm.examples.kotlin.data.convertToDb
+import io.realm.examples.kotlin.data.generateId
 import org.joda.time.LocalDate
 import java.util.*
 
@@ -50,7 +50,7 @@ data class SalesInvoice(
         return this
     }
 
-    override fun toDb(): RealmSalesInvoice {
+    override fun toDbModel(): RealmSalesInvoice {
         return convertToDb(SalesInvoice::class.java, getDbClass())
     }
 

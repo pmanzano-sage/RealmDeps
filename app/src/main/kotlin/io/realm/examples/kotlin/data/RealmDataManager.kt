@@ -1,30 +1,20 @@
-package io.realm.examples.kotlin
+package io.realm.examples.kotlin.data
 
 import android.util.Log
 import io.realm.Realm
+import io.realm.RealmList
 import io.realm.RealmObject
 import io.realm.examples.kotlin.dto.definition.StringUtils
-import io.realm.examples.kotlin.mapper.Db
-import io.realm.examples.kotlin.mapper.Dto
 
 /**
  * @author Pablo Manzano
  * @since 13/12/16
  */
-interface PersistenceProvider {
-    fun deleteAll()
-    fun getAll(clazz: Class<out Dto>): List<Dto>
-    fun find(clazz: Class<out Dto>, id: String): Dto?
-    fun save(dto: Dto): Boolean
-    fun create(dto: Dto): Boolean
-    fun update(dto: Dto): Boolean
-    fun delete(dto: Dto): Boolean
-}
 
 /**
- * This is a Realm implementation of the PersistenceProvider.
+ * This is a Realm implementation of the DataManager.
  */
-class DataManager(realm: Realm) : PersistenceProvider {
+class RealmDataManager(realm: Realm) : DataManager {
     private val realm: Realm
 
     init {
@@ -37,7 +27,7 @@ class DataManager(realm: Realm) : PersistenceProvider {
     override fun getAll(clazz: Class<out Dto>): List<Dto> {
         // TODO There should be a better way to figure out the dbClass (instead of creating an instance)
         val dto = clazz.newInstance()
-        return findAllDb(dto.getDbClass()).map(Db::toDto)
+        return findAllDb(dto.getDbClass()).map(DbModel::toDto)
     }
 
     /**
@@ -47,6 +37,11 @@ class DataManager(realm: Realm) : PersistenceProvider {
         realm.executeTransaction {
             realm.deleteAll()
         }
+    }
+
+    override fun count(clazz: Class<out Dto>): Long {
+        val dto = clazz.newInstance()
+        return countInDb(dto.getDbClass())
     }
 
     /**
@@ -99,9 +94,14 @@ class DataManager(realm: Realm) : PersistenceProvider {
         var success = false
         realm.executeTransaction {
             val dbEntity = findDb(dto.getDbClass(), dto.id)
-            Log.d(TAG, "delete: dbEntity=$dbEntity")
-            dbEntity?.delete(realm)
-            success = true
+            if (dbEntity != null) {
+                Log.d(TAG, "delete: dbEntity=$dbEntity")
+                // dbEntity?.delete(realm)
+                deleteCascade(dbEntity, realm)
+                success = true
+            } else {
+                Log.e(TAG, "delete: ${dto.getDbClass()} with id=${dto.id} NOT FOUND")
+            }
         }
         return success
     }
@@ -109,7 +109,7 @@ class DataManager(realm: Realm) : PersistenceProvider {
     /**
      * Delete an entity without cascading the deletion to its dependencies.
      */
-    fun deleteNonCascade(dto: Dto): Boolean {
+    override fun deleteNonCascade(dto: Dto): Boolean {
         var success = false
         realm.executeTransaction {
             val dbEntity = findDb(dto.getDbClass(), dto.id)
@@ -130,12 +130,15 @@ class DataManager(realm: Realm) : PersistenceProvider {
 
     // region private methods
 
-    private fun findAllDb(clazz: Class<out Db>): List<Db> {
+    private fun findAllDb(clazz: Class<out DbModel>): List<DbModel> {
         return realm.where(clazz).findAll()
     }
 
+    private fun countInDb(clazz: Class<out DbModel>): Long {
+        return realm.where(clazz).count()
+    }
 
-    private fun findDb(clazz: Class<out Db>, id: String): Db? {
+    private fun findDb(clazz: Class<out DbModel>, id: String): DbModel? {
         if (StringUtils.isEmpty(id)) {
             return null
         }
@@ -144,12 +147,15 @@ class DataManager(realm: Realm) : PersistenceProvider {
 
     private fun save(dto: Dto, deleteDeps: Boolean = false): Boolean {
         var success = false
-        val dbEntity = dto.checkValid().toDb()
+        val dbEntity = dto.checkValid().toDbModel()
         if (dbEntity.readyToSave()) {
             try {
                 realm.executeTransaction {
                     if (deleteDeps) {
-                        findDb(dto.getDbClass(), dto.id)?.delete(realm)
+                        val clazz = dto.getDbClass()
+                        val dbObj = findDb(clazz, dto.id)
+                        dbObj?.let { deleteCascade(it, realm) }
+                        Log.w(TAG, "save: Previous entity deleted")
                     }
                     realm.copyToRealmOrUpdate(dbEntity)
                     success = true
@@ -159,13 +165,65 @@ class DataManager(realm: Realm) : PersistenceProvider {
             }
         } else {
             Log.e(TAG, "save: Entity is not ready to be saved")
-            throw Exception("Db entity can not be created")
+            throw Exception("DbModel entity can not be created")
         }
         return success
     }
 
+    /**
+     * Generic function to cascade a RealmObject deletion.
+     * All DbModel objects that also implement BackLink interface will be deleted.
+     */
+    private fun deleteCascade(me: DbModel, realm: Realm, level: Int = 0) {
+        val TAG = "deleteCascade"
+        val TAB = "    "
+
+        // Take the object out of Realm, otherwise realm proxy object will show us an empty instance.
+        val myself = if (level == 0 && RealmObject.isManaged(me)) realm.copyFromRealm(me) else me
+        val fields = myself.javaClass.declaredFields
+        Log.i(TAG, "${TAB.repeat(level)} ${myself.javaClass.simpleName} ${myself.id} #fields=${fields.size}")
+
+        // Recursively delete dependencies that implement BackLink interface
+        for (field in fields) {
+            field.isAccessible = true
+            try {
+                val type = field.type
+                val cascade = field.isAnnotationPresent(CascadeOnDelete::class.java)
+                when {
+                    DbModel::class.java.isAssignableFrom(type) && (BackLink::class.java.isAssignableFrom(type) || cascade) -> {
+                        // Get the object from the source field, and delete it
+                        val dbObject = field.get(myself) as? DbModel
+                        Log.w(TAG, "${TAB.repeat(level)} Object '${field.name}':")
+                        // First of all, delete that object dependencies
+                        dbObject?.let { deleteCascade(it, realm, level.inc()) }
+                    }
+                    RealmList::class.java.isAssignableFrom(type) && cascade -> {
+                        val list = field.get(myself) as RealmList<*>
+                        Log.w(TAG, "${TAB.repeat(level)} List '${field.name}': ${list.size} items")
+                        // Get the list from the source field, and deleteCascade all the entities in the list.
+                        list.map { it as DbModel? }.filterNotNull().map { deleteCascade(it, realm, level.inc()) }
+                    }
+                    else -> {
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "${e.message}")
+            }
+        }
+
+        // Finally delete this object
+        try {
+            val obj = realm.where(myself.javaClass).equalTo("id", me.id).findFirst()
+            RealmObject.deleteFromRealm(obj)
+        } catch (e: Exception) {
+            Log.e(TAG, "${e.message}")
+        }
+    }
+
+
     companion object {
         val TAG = DataManager::class.java.simpleName
+
     }
 
     // endregion private methods

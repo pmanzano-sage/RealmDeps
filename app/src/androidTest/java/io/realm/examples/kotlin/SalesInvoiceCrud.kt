@@ -4,8 +4,11 @@ import android.test.AndroidTestCase
 import android.util.Log
 import io.realm.Realm
 import io.realm.RealmConfiguration
+import io.realm.examples.kotlin.data.DataManager
 import io.realm.examples.kotlin.dto.*
 import io.realm.examples.kotlin.dto.definition.SyncStatus
+import io.realm.examples.kotlin.data.Dto
+import io.realm.examples.kotlin.data.RealmDataManager
 import junit.framework.Assert
 import java.util.*
 
@@ -60,18 +63,15 @@ class SalesInvoiceCrud : AndroidTestCase() {
     private val CONTACT_ID = "contact1"
 
     private val INVOICE_LINES = arrayOf(LINE1, LINE2, LINE3)
-    private val UPDATED_INVOICE_LINES = arrayOf(LINE4, LINE2)
-
     private val INVOICE_PAYMENTS = arrayOf(PAY1, PAY3)
+
+    private val UPDATED_INVOICE_LINES = arrayOf(LINE4, LINE2)
     private val UPDATED_INVOICE_PAYMENTS = arrayOf(PAY3, PAY2, PAY1)
 
-    private val API_ID_2 = "apiId2"
-    private val LOCAL2 = "local2"
+    private val CONTACT_TYPES = arrayListOf(ContactType.Companion.V3.PURCHASING, ContactType.Companion.V3.ACCOUNTS)
+    private val CONTACT_PERSON_TYPES = arrayListOf(ContactPersonType.Companion.V3.CONTRACTOR)
 
-    private val API_ID_3 = "apiId3"
-    private val LOCAL3 = "local3"
-
-    private lateinit var testInvoice: SalesInvoice
+    private val testInvoice = createInvoice(API_ID_1, INVOICE_NUMBER, INVOICE_REF, INVOICE_DATE, INVOICE_LINES, INVOICE_PAYMENTS)
     private lateinit var dataManager: DataManager
 
     /**
@@ -85,12 +85,10 @@ class SalesInvoiceCrud : AndroidTestCase() {
         Realm.init(getContext())
         val realmConfig = RealmConfiguration.Builder().deleteRealmIfMigrationNeeded().build()
         Realm.setDefaultConfiguration(realmConfig)
-        dataManager = DataManager(Realm.getDefaultInstance())
-        dataManager.deleteAll()
+        dataManager = RealmDataManager(Realm.getDefaultInstance())
 
-        // Create one invoice
-        testInvoice = createInvoice(API_ID_1, INVOICE_NUMBER, INVOICE_REF, INVOICE_DATE, INVOICE_LINES, INVOICE_PAYMENTS)
-        dataManager.save(testInvoice)
+        // Note that we are deleting all the entities before launching any test
+        dataManager.deleteAll()
     }
 
     @Throws(Exception::class)
@@ -107,15 +105,10 @@ class SalesInvoiceCrud : AndroidTestCase() {
      */
     @Throws(Exception::class)
     fun testSaveSalesInvoice() {
-        // Check the number of invoices in the db
-        val invoices = dataManager.getAll(SalesInvoice::class.java)
-        Assert.assertNotNull(invoices)
-        Assert.assertEquals(1, invoices.size)
-
-        // Check the number of invoice lines in the db
-        val lines = dataManager.getAll(InvoiceLine::class.java)
-        Assert.assertNotNull(lines)
-        Assert.assertEquals(3, lines.size)
+        dataManager.save(testInvoice)
+        checkNumEntitiesIs(SalesInvoice::class.java, 1)
+        checkNumEntitiesIs(InvoiceLine::class.java, INVOICE_LINES.size.toLong())
+        checkNumEntitiesIs(Payment::class.java, INVOICE_PAYMENTS.size.toLong())
     }
 
     /**
@@ -129,27 +122,17 @@ class SalesInvoiceCrud : AndroidTestCase() {
     @Throws(Exception::class)
     fun testUpdateSalesInvoice1() {
 
+        dataManager.save(testInvoice)
         // Create an invoice with everything equal to testInvoice, except for the invoice lines, totals, etc...
         val updatedInvoice = createInvoice(API_ID_1, INVOICE_NUMBER, INVOICE_REF, INVOICE_DATE, UPDATED_INVOICE_LINES,
                 UPDATED_INVOICE_PAYMENTS)
 
         // Since both invoices have the same apiId, saving it to the db should trigger an update operation.
-        val savedInvoice = dataManager.update(updatedInvoice)
+        dataManager.update(updatedInvoice)
 
-        // Check the number of invoices in the db
-        val invoices = dataManager.getAll(SalesInvoice::class.java)
-        Assert.assertNotNull(invoices)
-        Assert.assertEquals(1, invoices.size)
-
-        // Check the number of invoice lines in the db
-        val lines = dataManager.getAll(InvoiceLine::class.java)
-        Assert.assertNotNull(lines)
-        Assert.assertEquals(2, lines.size)
-
-        // Check the number of payments in the db
-        val payments = dataManager.getAll(Payment::class.java)
-        Assert.assertNotNull(payments)
-        Assert.assertEquals(3, payments.size)
+        checkNumEntitiesIs(SalesInvoice::class.java, 1)
+        checkNumEntitiesIs(InvoiceLine::class.java, UPDATED_INVOICE_LINES.size.toLong())
+        checkNumEntitiesIs(Payment::class.java, UPDATED_INVOICE_PAYMENTS.size.toLong())
 
     }
 
@@ -164,22 +147,12 @@ class SalesInvoiceCrud : AndroidTestCase() {
     @Throws(Exception::class)
     fun testDeleteSalesInvoice() {
 
+        dataManager.save(testInvoice)
         dataManager.delete(testInvoice)
 
-        // Check the number of invoices in the db
-        val invoices = dataManager.getAll(SalesInvoice::class.java)
-        Assert.assertNotNull(invoices)
-        Assert.assertEquals(0, invoices.size)
-
-        // Check the number of invoice lines in the db
-        val lines = dataManager.getAll(InvoiceLine::class.java)
-        Assert.assertNotNull(lines)
-        Assert.assertEquals(0, lines.size)
-
-        // Check the number of payments in the db
-        val payments = dataManager.getAll(Payment::class.java)
-        Assert.assertNotNull(payments)
-        Assert.assertEquals(0, payments.size)
+        checkNumEntitiesIs(SalesInvoice::class.java, 0)
+        checkNumEntitiesIs(InvoiceLine::class.java, 0)
+        checkNumEntitiesIs(Payment::class.java, 0)
     }
 
 
@@ -246,7 +219,7 @@ class SalesInvoiceCrud : AndroidTestCase() {
             outstanding -= payment.amount
         }
 
-        val contact = createContact("contact1", "contact 1")
+        val contact = createContact("contact1")
 
         return SalesInvoice(id, SyncStatus.SYNC_SUCCESS, "SI-" + invoiceNumber, total, net, tax, outstanding, CURRENCY_CODE,
                 invoiceNumber, reference, date, date, "notes", "T&C", lines, payments, contact)
@@ -270,16 +243,24 @@ class SalesInvoiceCrud : AndroidTestCase() {
         return Payment(id, SyncStatus.SYNC_SUCCESS, description, amount, CURRENCY_CODE, date, DEFAULT_PAY_ACCOUNT, parentId)
     }
 
-    private fun createContact(id: String, name: String): Contact {
-        return createContact(id, name, "email", "phone", "sourceID")
+    private fun createContact(name: String): Contact {
+        return createContact(name, "ref", "email", "phone")
     }
 
-    private fun createContact(id: String, name: String, email: String, phone: String, sourceId: String): Contact {
-        val country = Country(id, SyncStatus.getDefault(), "country", "country")
-        val address = Address(id, SyncStatus.getDefault(), "street1", "street2", "city", "county", "postcode", country)
-        val contactType = ContactType(id, SyncStatus.getDefault(), "symbo", "name")
-        return Contact(id, SyncStatus.getDefault(), name, email, phone, phone, "", address, sourceId, "company",
-                contactType)
+    /**
+     * Creates a dummy Contact.
+     */
+    private fun createContact(name: String, reference: String, email: String, mobile: String): Contact {
+        val mainAddress = Address.create("street1 main", "street2 main", "town", "county", "postCode", AddressType.Companion.V3.DELIVERY)
+        val deliveryAddress = Address.create("street1 dely", "street2 dely", "town", "county", "postCode", AddressType.Companion.V3.DELIVERY)
+        val contactPersonTypes = ContactPersonType.createList(CONTACT_PERSON_TYPES)
+        val mainContactPerson = ContactPerson.create(contactPersonTypes, name, "job", "telephone", mobile, email, "fax", address = mainAddress)
+        val contactTypes = ContactType.createList(CONTACT_TYPES)
+        return Contact.create(contactTypes, name, reference, mainAddress, deliveryAddress, mainContactPerson)
+    }
+
+    private fun <T : Dto> checkNumEntitiesIs(clazz: Class<T>, numEntities: Long) {
+        Assert.assertEquals(numEntities, dataManager.count(clazz))
     }
 
 

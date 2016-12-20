@@ -5,9 +5,9 @@ import io.realm.examples.kotlin.dto.definition.Constants
 import io.realm.examples.kotlin.dto.definition.StringUtils
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.entity.RealmAttachment
-import io.realm.examples.kotlin.mapper.Dto
-import io.realm.examples.kotlin.mapper.convertToDb
-import io.realm.examples.kotlin.mapper.generateId
+import io.realm.examples.kotlin.data.Dto
+import io.realm.examples.kotlin.data.convertToDb
+import io.realm.examples.kotlin.data.generateId
 
 /**
  * Created by neil.wilkinson on 12/07/2016.
@@ -125,7 +125,7 @@ data class Attachment(
         return this
     }
 
-    override fun toDb(): RealmAttachment {
+    override fun toDbModel(): RealmAttachment {
         return convertToDb(Attachment::class.java, getDbClass())
     }
 

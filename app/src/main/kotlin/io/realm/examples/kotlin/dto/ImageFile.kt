@@ -1,9 +1,9 @@
 package io.realm.examples.kotlin.dto
 
 import io.realm.examples.kotlin.dto.definition.SyncStatus
-import io.realm.examples.kotlin.mapper.Db
-import io.realm.examples.kotlin.mapper.Dto
-import io.realm.examples.kotlin.mapper.generateId
+import io.realm.examples.kotlin.data.DbModel
+import io.realm.examples.kotlin.data.Dto
+import io.realm.examples.kotlin.data.generateId
 
 /**
  * Image File model
@@ -19,12 +19,12 @@ data class ImageFile(
 
 ) : Dto {
 
-    override fun toDb(): Db {
+    override fun toDbModel(): DbModel {
         // TODO
         throw UnsupportedOperationException("not implemented")
     }
 
-    override fun getDbClass(): Class<out Db> {
+    override fun getDbClass(): Class<out DbModel> {
         // TODO
         throw UnsupportedOperationException("not implemented")
     }

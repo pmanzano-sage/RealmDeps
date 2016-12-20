@@ -1,12 +1,14 @@
 package io.realm.examples.kotlin.entity
 
-import io.realm.Realm
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
+import io.realm.examples.kotlin.data.BackLink
+import io.realm.examples.kotlin.data.DbModel
+import io.realm.examples.kotlin.data.convertToDto
+import io.realm.examples.kotlin.data.generateId
 import io.realm.examples.kotlin.dto.InvoiceLine
 import io.realm.examples.kotlin.dto.definition.SyncStatus
-import io.realm.examples.kotlin.mapper.*
 import java.util.*
 
 @RealmClass
@@ -24,9 +26,9 @@ open class RealmInvoiceLine(
         open var taxRate: RealmTaxRate? = null,
         open var totalAmount: Double = 0.0,
         override var parentId: String = ""
-) : Db, BackLink {
+) : DbModel, BackLink {
 
-    override fun toDto(): Dto {
+    override fun toDto(): InvoiceLine {
         return convertToDto(RealmInvoiceLine::class.java, getDtoClass())
     }
 
@@ -36,10 +38,6 @@ open class RealmInvoiceLine(
 
     override fun getDtoClass(): Class<out InvoiceLine> {
         return InvoiceLine::class.java
-    }
-
-    override fun delete(realm: Realm): Boolean {
-        return deleteCascade(RealmInvoiceLine::class.java, realm)
     }
 
     // Convenient factory methods

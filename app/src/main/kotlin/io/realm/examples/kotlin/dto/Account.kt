@@ -2,8 +2,8 @@ package io.realm.examples.kotlin.dto
 
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.entity.RealmAccount
-import io.realm.examples.kotlin.mapper.Dto
-import io.realm.examples.kotlin.mapper.generateId
+import io.realm.examples.kotlin.data.Dto
+import io.realm.examples.kotlin.data.generateId
 import java.text.DecimalFormat
 import java.text.NumberFormat
 
@@ -36,12 +36,12 @@ data class Account(
         return this
     }
 
-    //    override fun toDb(): RealmAccount {
+    //    override fun toDbModel(): RealmAccount {
     //        return convertToDb(Account::class.java, getDbClass())
     //    }
 
     // Custom mapper because of balance
-    override fun toDb(): RealmAccount {
+    override fun toDbModel(): RealmAccount {
         return RealmAccount(
                 id,
                 sync.ordinal,
@@ -51,7 +51,7 @@ data class Account(
                 currency = balance.currencyCode,
                 nominalCode = nominalCode,
                 editable = editable,
-                accountType = accountType!!.toDb()
+                accountType = accountType!!.toDbModel()
         )
     }
 

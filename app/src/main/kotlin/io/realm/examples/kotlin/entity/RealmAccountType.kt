@@ -1,15 +1,13 @@
 package io.realm.examples.kotlin.entity
 
-import io.realm.Realm
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
 import io.realm.examples.kotlin.dto.AccountType
 import io.realm.examples.kotlin.dto.definition.SyncStatus
-import io.realm.examples.kotlin.mapper.Db
-import io.realm.examples.kotlin.mapper.convertToDto
-import io.realm.examples.kotlin.mapper.deleteCascade
-import io.realm.examples.kotlin.mapper.generateId
+import io.realm.examples.kotlin.data.DbModel
+import io.realm.examples.kotlin.data.convertToDto
+import io.realm.examples.kotlin.data.generateId
 import java.util.*
 
 @RealmClass
@@ -21,7 +19,7 @@ open class RealmAccountType(
 
         open var name: String = "",
         open var symbol: String? = ""
-) : Db {
+) : DbModel {
 
     override fun toDto(): AccountType {
         return convertToDto(RealmAccountType::class.java, getDtoClass())
@@ -35,8 +33,5 @@ open class RealmAccountType(
         return AccountType::class.java
     }
 
-    override fun delete(realm: Realm): Boolean {
-        return deleteCascade(RealmAccountType::class.java, realm)
-    }
 
 }

@@ -2,9 +2,9 @@ package io.realm.examples.kotlin.dto
 
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.entity.RealmSubTaxRate
-import io.realm.examples.kotlin.mapper.Dto
-import io.realm.examples.kotlin.mapper.convertToDb
-import io.realm.examples.kotlin.mapper.generateId
+import io.realm.examples.kotlin.data.Dto
+import io.realm.examples.kotlin.data.convertToDb
+import io.realm.examples.kotlin.data.generateId
 
 /**
  * Common Sub Tax Rate model
@@ -32,7 +32,7 @@ data class SubTaxRate(
         return this
     }
 
-    override fun toDb(): RealmSubTaxRate {
+    override fun toDbModel(): RealmSubTaxRate {
         return convertToDb(SubTaxRate::class.java, getDbClass())
     }
 

@@ -3,9 +3,9 @@ package io.realm.examples.kotlin.dto
 import io.realm.examples.kotlin.dto.definition.Constants
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.entity.RealmTransaction
-import io.realm.examples.kotlin.mapper.Dto
-import io.realm.examples.kotlin.mapper.convertToDb
-import io.realm.examples.kotlin.mapper.generateId
+import io.realm.examples.kotlin.data.Dto
+import io.realm.examples.kotlin.data.convertToDb
+import io.realm.examples.kotlin.data.generateId
 import java.text.SimpleDateFormat
 
 /**
@@ -46,7 +46,7 @@ data class Transaction(
         return this
     }
 
-    override fun toDb(): RealmTransaction {
+    override fun toDbModel(): RealmTransaction {
         return convertToDb(Transaction::class.java, getDbClass())
     }
 

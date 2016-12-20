@@ -1,12 +1,13 @@
 package io.realm.examples.kotlin.entity
 
-import io.realm.Realm
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
 import io.realm.examples.kotlin.dto.Country
 import io.realm.examples.kotlin.dto.definition.SyncStatus
-import io.realm.examples.kotlin.mapper.*
+import io.realm.examples.kotlin.data.DbModel
+import io.realm.examples.kotlin.data.convertToDto
+import io.realm.examples.kotlin.data.generateId
 import java.util.*
 
 @RealmClass
@@ -18,9 +19,9 @@ open class RealmCountry(
 
         open var code: String = "",
         open var name: String = ""
-) : Db {
+) : DbModel {
 
-    override fun toDto(): Dto {
+    override fun toDto(): Country {
         return convertToDto(RealmCountry::class.java, getDtoClass())
     }
 
@@ -30,10 +31,6 @@ open class RealmCountry(
 
     override fun getDtoClass(): Class<out Country> {
         return Country::class.java
-    }
-
-    override fun delete(realm: Realm): Boolean {
-        return deleteCascade(RealmCountry::class.java, realm)
     }
 
 

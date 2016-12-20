@@ -1,13 +1,15 @@
 package io.realm.examples.kotlin.entity
 
-import io.realm.Realm
 import io.realm.RealmList
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
 import io.realm.examples.kotlin.dto.SalesInvoice
 import io.realm.examples.kotlin.dto.definition.SyncStatus
-import io.realm.examples.kotlin.mapper.*
+import io.realm.examples.kotlin.data.CascadeOnDelete
+import io.realm.examples.kotlin.data.DbModel
+import io.realm.examples.kotlin.data.convertToDto
+import io.realm.examples.kotlin.data.generateId
 import java.util.*
 
 @RealmClass
@@ -29,12 +31,17 @@ open class RealmSalesInvoice(
         open var dueDate: String = "",
         open var notes: String = "",
         open var termsAndConditions: String = "",
-        open var invoiceLines: RealmList<RealmInvoiceLine>? = null,
-        open var payments: RealmList<RealmPayment>? = null,
-        open var contact: RealmContact? = null
-) : Db {
 
-    override fun toDto(): Dto {
+        @CascadeOnDelete
+        open var invoiceLines: RealmList<RealmInvoiceLine>? = null,
+
+        @CascadeOnDelete
+        open var payments: RealmList<RealmPayment>? = null,
+
+        open var contact: RealmContact? = null
+) : DbModel {
+
+    override fun toDto(): SalesInvoice {
         return convertToDto(RealmSalesInvoice::class.java, getDtoClass())
     }
 
@@ -46,9 +53,6 @@ open class RealmSalesInvoice(
         return SalesInvoice::class.java
     }
 
-    override fun delete(realm: Realm): Boolean {
-        return deleteCascade(RealmSalesInvoice::class.java, realm)
-    }
 
 }
 

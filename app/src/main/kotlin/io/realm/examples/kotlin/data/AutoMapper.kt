@@ -1,12 +1,9 @@
-package io.realm.examples.kotlin.mapper
+package io.realm.examples.kotlin.data
 
 import android.util.Log
-import io.realm.Realm
 import io.realm.RealmList
 import io.realm.RealmModel
-import io.realm.RealmObject
 import io.realm.examples.kotlin.dto.definition.Constants
-import io.realm.examples.kotlin.dto.definition.StringUtils
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import java.util.*
 
@@ -18,39 +15,12 @@ import java.util.*
 @Target(AnnotationTarget.FIELD)
 annotation class CascadeOnDelete
 
-interface Dto {
-    val id: String
-    var sync: SyncStatus
-
-    fun toDisplayString(): String
-
-    fun isPersistedOnServer() = !StringUtils.isEmpty(id) && !id.startsWith(Constants.FAKE_API_ID_PREFIX)
-
-    fun toDb(): Db
-    fun checkValid(): Dto
-    fun getDbClass(): Class<out Db>
-}
 
 fun generateId(): String {
     // foo-8374-4ece-afef-fc7f7cd0e634
     return Constants.FAKE_API_ID_PREFIX + UUID.randomUUID().toString().substring(Constants.FAKE_API_ID_PREFIX.length)
 }
 
-
-interface Db : RealmModel {
-    var id: String
-    var sync: Int
-
-    fun toDto(): Dto
-    fun readyToSave(): Boolean
-    fun getDtoClass(): Class<out Dto>
-    // fun del(localStore: LocalStore): Boolean
-    fun delete(realm: Realm): Boolean
-}
-
-// Just a tagging interface that we should use in place of Realm.
-// Understand delegate syntax in Kotlin for this..
-interface LocalStore
 
 /**
  * This interface has to be implemented by all the entities that require a back link to its parent.
@@ -64,7 +34,7 @@ interface BackLink {
  * Generic function to convert a Dto to a RealmObject.
  */
 fun <F, T> F.convertToDb(fromClazz: Class<F>, toClazz: Class<T>): T {
-    val TAG = "toDb"
+    val TAG = "toDbModel"
     val instance = toClazz.newInstance()
     val fields = fromClazz.declaredFields
     for (field in fields) {
@@ -98,16 +68,16 @@ fun <F, T> F.convertToDb(fromClazz: Class<F>, toClazz: Class<T>): T {
                 Dto::class.java.isAssignableFrom(type) -> {
                     // Get the object from the source field, and convert it to DTO.
                     val dtoObject = field.get(this) as? Dto
-                    // Set the Db object to the target field
+                    // Set the DbModel object to the target field
                     val targetField = toClazz.getDeclaredField(field.name)
                     targetField.isAccessible = true
-                    dtoObject?.toDb().let { targetField.set(instance, it) }
+                    dtoObject?.toDbModel().let { targetField.set(instance, it) }
                 }
                 List::class.java.isAssignableFrom(type) -> {
                     // Get the list from the source field
                     val list = field.get(this) as? List<*>
                     val dbList = RealmList<RealmModel>()
-                    list?.map { it as Dto }?.mapTo(dbList, Dto::toDb)
+                    list?.map { it as Dto }?.mapTo(dbList, Dto::toDbModel)
                     // Set the DTO list to the target field
                     val targetField = toClazz.getDeclaredField(field.name)
                     targetField.isAccessible = true
@@ -154,9 +124,9 @@ fun <F, T> F.convertToDto(fromClazz: Class<in F>, toClazz: Class<out T>): T {
                 }
                 type == Long::class.java -> targetField.set(instance, field.get(this))
                 type == Double::class.java -> targetField.set(instance, field.get(this))
-                Db::class.java.isAssignableFrom(type) -> {
+                DbModel::class.java.isAssignableFrom(type) -> {
                     // Get the object from the source field, and convert it to DTO.
-                    val dbObject = field.get(this) as? Db
+                    val dbObject = field.get(this) as? DbModel
                     // Set the DTO to the target field
                     dbObject?.toDto().let { targetField.set(instance, it) }
                 }
@@ -164,7 +134,7 @@ fun <F, T> F.convertToDto(fromClazz: Class<in F>, toClazz: Class<out T>): T {
                     // Get the list from the source field
                     val list = field.get(this) as? RealmList<*>
                     val dtoList = arrayListOf<Dto>()
-                    list?.map { it as Db }?.mapTo(dtoList, Db::toDto)
+                    list?.map { it as DbModel }?.mapTo(dtoList, DbModel::toDto)
                     // Set the DTO list to the target field
                     targetField.set(instance, dtoList)
                 }
@@ -179,60 +149,4 @@ fun <F, T> F.convertToDto(fromClazz: Class<in F>, toClazz: Class<out T>): T {
     }
 
     return instance
-}
-
-
-/**
- * Generic function to cascade a RealmObject deletion.
- * All Db objects that also implement BackLink interface will be deleted.
- */
-fun Db.deleteCascade(clazz: Class<out Db>, realm: Realm, level: Int = 0): Boolean {
-    var success = true
-    val TAG = "deleteCascade"
-    val TAB = "    "
-    val fields = clazz.declaredFields
-
-    // Take the object out of Realm, otherwise realm proxy object will show us an empty instance.
-    val myself = if (level == 0 && RealmObject.isManaged(this)) realm.copyFromRealm(this) else this
-
-    Log.i(TAG, "${TAB.repeat(level)} ${myself.javaClass.simpleName} ${myself.id}")
-
-    // Recursively delete dependencies that implement BackLink interface
-    for (field in fields) {
-        field.isAccessible = true
-        try {
-            val type = field.type
-            val cascade = field.isAnnotationPresent(CascadeOnDelete::class.java)
-            when {
-                Db::class.java.isAssignableFrom(type) && (BackLink::class.java.isAssignableFrom(type) || cascade) -> {
-                    // Get the object from the source field, and delete it
-                    val dbObject = field.get(myself) as? Db
-                    Log.w(TAG, "${TAB.repeat(level)} Object '${field.name}':")
-                    // First of all, delete that object dependencies
-                    dbObject?.deleteCascade(dbObject.javaClass, realm, level.inc())
-                }
-                RealmList::class.java.isAssignableFrom(type) && cascade -> {
-                    val list = field.get(myself) as RealmList<*>
-                    Log.w(TAG, "${TAB.repeat(level)} List '${field.name}': ${list.size} items")
-                    // Get the list from the source field, and deleteCascade all the entities in the list.
-                    list.map { it as Db? }.map { it?.deleteCascade(it.javaClass, realm, level.inc()) }
-                }
-                else -> {
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "${e.message}")
-            success = false
-        }
-    }
-
-    // Finally delete this object
-    val obj = realm.where(myself.javaClass).equalTo("id", id).findFirst()
-    RealmObject.deleteFromRealm(obj)
-
-    if (level == 0) {
-        Log.w(TAG, "success=$success")
-    }
-
-    return success
 }

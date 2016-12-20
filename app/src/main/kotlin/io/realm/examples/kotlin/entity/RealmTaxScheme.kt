@@ -1,12 +1,13 @@
 package io.realm.examples.kotlin.entity
 
-import io.realm.Realm
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
 import io.realm.examples.kotlin.dto.TaxScheme
 import io.realm.examples.kotlin.dto.definition.SyncStatus
-import io.realm.examples.kotlin.mapper.*
+import io.realm.examples.kotlin.data.DbModel
+import io.realm.examples.kotlin.data.convertToDto
+import io.realm.examples.kotlin.data.generateId
 
 @RealmClass
 open class RealmTaxScheme(
@@ -14,9 +15,9 @@ open class RealmTaxScheme(
         override var sync: Int = SyncStatus.getDefault().ordinal,
 
         open var name: String = ""
-) : Db {
+) : DbModel {
 
-    override fun toDto(): Dto {
+    override fun toDto(): TaxScheme {
         return convertToDto(RealmTaxScheme::class.java, getDtoClass())
     }
 
@@ -26,10 +27,6 @@ open class RealmTaxScheme(
 
     override fun getDtoClass(): Class<out TaxScheme> {
         return TaxScheme::class.java
-    }
-
-    override fun delete(realm: Realm): Boolean {
-        return deleteCascade(RealmTaxScheme::class.java, realm)
     }
 
 }

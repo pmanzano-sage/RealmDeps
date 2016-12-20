@@ -2,9 +2,9 @@ package io.realm.examples.kotlin.dto
 
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.entity.RealmTransactionCategory
-import io.realm.examples.kotlin.mapper.Dto
-import io.realm.examples.kotlin.mapper.convertToDb
-import io.realm.examples.kotlin.mapper.generateId
+import io.realm.examples.kotlin.data.Dto
+import io.realm.examples.kotlin.data.convertToDb
+import io.realm.examples.kotlin.data.generateId
 
 /**
  * Common Transaction Category model
@@ -29,7 +29,7 @@ data class TransactionCategory(
         return this
     }
 
-    override fun toDb(): RealmTransactionCategory {
+    override fun toDbModel(): RealmTransactionCategory {
         return convertToDb(TransactionCategory::class.java, getDbClass())
     }
 

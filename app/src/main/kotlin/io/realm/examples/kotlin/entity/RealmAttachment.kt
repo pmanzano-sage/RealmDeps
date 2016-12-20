@@ -1,12 +1,13 @@
 package io.realm.examples.kotlin.entity
 
-import io.realm.Realm
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
 import io.realm.examples.kotlin.dto.Attachment
 import io.realm.examples.kotlin.dto.definition.SyncStatus
-import io.realm.examples.kotlin.mapper.*
+import io.realm.examples.kotlin.data.DbModel
+import io.realm.examples.kotlin.data.convertToDto
+import io.realm.examples.kotlin.data.generateId
 import java.util.*
 
 @RealmClass
@@ -28,9 +29,9 @@ open class RealmAttachment(
         open var url: String = "",
         open var tmpFile: String = ""
 
-) : Db {
+) : DbModel {
 
-    override fun toDto(): Dto {
+    override fun toDto(): Attachment {
         return convertToDto(RealmAttachment::class.java, getDtoClass())
     }
 
@@ -42,8 +43,5 @@ open class RealmAttachment(
         return Attachment::class.java
     }
 
-    override fun delete(realm: Realm): Boolean {
-        return deleteCascade(RealmAttachment::class.java, realm)
-    }
 
 }

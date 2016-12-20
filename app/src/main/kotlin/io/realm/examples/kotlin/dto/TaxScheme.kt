@@ -2,9 +2,9 @@ package io.realm.examples.kotlin.dto
 
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.entity.RealmTaxScheme
-import io.realm.examples.kotlin.mapper.Dto
-import io.realm.examples.kotlin.mapper.convertToDb
-import io.realm.examples.kotlin.mapper.generateId
+import io.realm.examples.kotlin.data.Dto
+import io.realm.examples.kotlin.data.convertToDb
+import io.realm.examples.kotlin.data.generateId
 
 /**
  * Occurs inside a FinancialSettings entity.
@@ -26,7 +26,7 @@ data class TaxScheme(
         return this
     }
 
-    override fun toDb(): RealmTaxScheme {
+    override fun toDbModel(): RealmTaxScheme {
         return convertToDb(TaxScheme::class.java, getDbClass())
     }
 

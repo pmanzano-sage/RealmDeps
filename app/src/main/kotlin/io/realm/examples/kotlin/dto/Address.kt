@@ -2,9 +2,9 @@ package io.realm.examples.kotlin.dto
 
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.entity.RealmAddress
-import io.realm.examples.kotlin.mapper.Dto
-import io.realm.examples.kotlin.mapper.convertToDb
-import io.realm.examples.kotlin.mapper.generateId
+import io.realm.examples.kotlin.data.Dto
+import io.realm.examples.kotlin.data.convertToDb
+import io.realm.examples.kotlin.data.generateId
 
 /**
  * Common Address model
@@ -17,7 +17,8 @@ data class Address(
         var town: String? = "",
         var county: String? = "",
         var postCode: String? = "",
-        var country: Country? = null
+        var country: Country? = null,
+        var addressType: AddressType? = null
 ) : Dto {
 
     override fun getDbClass(): Class<out RealmAddress> {
@@ -28,7 +29,7 @@ data class Address(
         return this
     }
 
-    override fun toDb(): RealmAddress {
+    override fun toDbModel(): RealmAddress {
         return convertToDb(Address::class.java, getDbClass())
     }
 
@@ -36,4 +37,37 @@ data class Address(
     override fun toDisplayString(): String {
         return "$streetOne $streetTwo $town $country $postCode"
     }
+
+    // Convenient factory methods
+    companion object {
+
+        /**
+         * Example of usage:
+         * Address.create( "street1", "street2", "town", "county", "postCode", AddressType.Companion.V3.DELIVERY )
+         */
+        fun create(
+                streetOne: String? = "",
+                streetTwo: String? = "",
+                town: String? = "",
+                county: String? = "",
+                postCode: String? = "",
+                type: AddressType.Companion.V3,
+                countryCode: Country.Companion.Code = Country.Companion.Code.UK): Address {
+
+            val addressType = AddressType.create(type)
+            val country = Country.create(countryCode)
+
+            return Address(
+                    generateId(),
+                    SyncStatus.getDefault(),
+                    streetOne,
+                    streetTwo,
+                    town,
+                    county,
+                    postCode,
+                    country,
+                    addressType)
+        }
+    }
+
 }

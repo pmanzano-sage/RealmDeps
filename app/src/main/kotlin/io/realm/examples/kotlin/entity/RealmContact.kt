@@ -1,12 +1,15 @@
 package io.realm.examples.kotlin.entity
 
-import io.realm.Realm
+import io.realm.RealmList
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
 import io.realm.examples.kotlin.dto.Contact
 import io.realm.examples.kotlin.dto.definition.SyncStatus
-import io.realm.examples.kotlin.mapper.*
+import io.realm.examples.kotlin.data.CascadeOnDelete
+import io.realm.examples.kotlin.data.DbModel
+import io.realm.examples.kotlin.data.convertToDto
+import io.realm.examples.kotlin.data.generateId
 import java.util.*
 
 @RealmClass
@@ -16,18 +19,21 @@ open class RealmContact(
         open var creationDate: Date = Date(),
         open var updateDate: Date = Date(),
 
+        open var contactTypes: RealmList<RealmContactType>? = null,
         open var name: String = "",
-        open var emailAddress: String = "",
-        open var phoneNumber: String = "",
-        open var phoneNumber2: String = "",
-        open var photoUri: String = "",
-        open var sourceId: String = "",
-        open var address: RealmAddress? = null,
-        open var company: String = "",
-        open var contactType: RealmContactType? = null
-) : Db {
+        open var reference: String = "",
 
-    override fun toDto(): Dto {
+        @CascadeOnDelete
+        open var mainAddress: RealmAddress? = null,
+
+        @CascadeOnDelete
+        open var deliveryAddress: RealmAddress? = null,
+
+        // Do not cascade since this person may be shared
+        open var mainContactPerson: RealmContactPerson? = null
+) : DbModel {
+
+    override fun toDto(): Contact {
         return convertToDto(RealmContact::class.java, getDtoClass())
     }
 
@@ -39,9 +45,6 @@ open class RealmContact(
         return Contact::class.java
     }
 
-    override fun delete(realm: Realm): Boolean {
-        return deleteCascade(RealmContact::class.java, realm)
-    }
 
     companion object {
         @JvmField
