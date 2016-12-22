@@ -1,10 +1,10 @@
 package io.realm.examples.kotlin.dto
 
-import io.realm.examples.kotlin.dto.definition.SyncStatus
-import io.realm.examples.kotlin.entity.RealmCountry
 import io.realm.examples.kotlin.data.Dto
 import io.realm.examples.kotlin.data.convertToDb
 import io.realm.examples.kotlin.data.generateId
+import io.realm.examples.kotlin.dto.definition.SyncStatus
+import io.realm.examples.kotlin.entity.RealmCountry
 
 /**
  * Common Country model
@@ -12,8 +12,8 @@ import io.realm.examples.kotlin.data.generateId
 data class Country(
         override val id: String = generateId(),
         override var sync: SyncStatus = SyncStatus.getDefault(),
-        val code: String?,
-        val name: String?
+        val code: String? = null,
+        val name: String? = null
 ) : Dto {
 
     override fun getDbClass(): Class<out RealmCountry> {

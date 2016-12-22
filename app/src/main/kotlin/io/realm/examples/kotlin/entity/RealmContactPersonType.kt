@@ -1,16 +1,19 @@
 package io.realm.examples.kotlin.entity
 
+import android.util.Log
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
-import io.realm.examples.kotlin.dto.ContactPersonType
-import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.data.DbModel
+import io.realm.examples.kotlin.data.SupportsIdOnly
 import io.realm.examples.kotlin.data.convertToDto
 import io.realm.examples.kotlin.data.generateId
+import io.realm.examples.kotlin.dto.ContactPersonType
+import io.realm.examples.kotlin.dto.definition.SyncStatus
 import java.util.*
 
 @RealmClass
+@SupportsIdOnly
 open class RealmContactPersonType(
         @PrimaryKey @Required override var id: String = generateId(),
         override var sync: Int = SyncStatus.getDefault().ordinal,
@@ -26,7 +29,9 @@ open class RealmContactPersonType(
     }
 
     override fun readyToSave(): Boolean {
-        return true
+        val ready = !symbol.isBlank() && !name.isBlank()
+        Log.d("RealmContactPersonType", "ready=$ready")
+        return ready
     }
 
     override fun getDtoClass(): Class<out ContactPersonType> {

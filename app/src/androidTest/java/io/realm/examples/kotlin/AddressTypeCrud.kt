@@ -82,7 +82,7 @@ class AddressTypeCrud : AndroidTestCase() {
 
     fun testCreateIdOnlyEntity() {
         val contactPersonType = createIdOnlyEntity(ContactPersonType::class.java, "ACCOUNTS")
-        dataManager.save(contactPersonType)
+        dataManager.save(contactPersonType, false)
     }
 
 

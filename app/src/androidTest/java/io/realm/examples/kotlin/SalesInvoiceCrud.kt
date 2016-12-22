@@ -5,10 +5,10 @@ import android.util.Log
 import io.realm.Realm
 import io.realm.RealmConfiguration
 import io.realm.examples.kotlin.data.DataManager
-import io.realm.examples.kotlin.dto.*
-import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.data.Dto
 import io.realm.examples.kotlin.data.RealmDataManager
+import io.realm.examples.kotlin.dto.*
+import io.realm.examples.kotlin.dto.definition.SyncStatus
 import junit.framework.Assert
 import java.util.*
 
@@ -147,7 +147,7 @@ class SalesInvoiceCrud : AndroidTestCase() {
     @Throws(Exception::class)
     fun testDeleteSalesInvoice() {
 
-        dataManager.save(testInvoice)
+        dataManager.save(testInvoice, true)
         dataManager.delete(testInvoice)
 
         checkNumEntitiesIs(SalesInvoice::class.java, 0)

@@ -3,6 +3,7 @@ package io.realm.examples.kotlin.data
 import android.util.Log
 import io.realm.Realm
 import io.realm.RealmList
+import io.realm.RealmModel
 import io.realm.RealmObject
 import io.realm.examples.kotlin.dto.definition.StringUtils
 
@@ -61,13 +62,13 @@ class RealmDataManager(realm: Realm) : DataManager {
      * Update an entity deleting old dependencies.
      * Throws an exception if the entity does not exist.
      */
-    override fun update(dto: Dto): Boolean {
+    override fun update(dto: Dto, validate: Boolean): Boolean {
         val success: Boolean
         val dbEntity = findDb(dto.getDbClass(), dto.id)
         if (dbEntity != null) {
-            success = save(dto, true)
+            success = save(dto, true, validate)
         } else {
-            throw Exception("Not found ${dto.javaClass.name} with id=${dto.id}")
+            throw Exception("${dto.javaClass.simpleName} with id=${dto.id} not found")
         }
         return success
     }
@@ -75,13 +76,13 @@ class RealmDataManager(realm: Realm) : DataManager {
     /**
      * Create a new entity. Throws an exception if the entity already exists.
      */
-    override fun create(dto: Dto): Boolean {
+    override fun create(dto: Dto, validate: Boolean): Boolean {
         val success: Boolean
         val dbEntity = findDb(dto.getDbClass(), dto.id)
         if (dbEntity == null) {
-            success = save(dto)
+            success = save(dto, true, validate)
         } else {
-            throw Exception("Already exists ${dto.javaClass.name} with id=${dto.id}")
+            throw Exception("${dto.javaClass.simpleName} with id=${dto.id} already exists")
         }
         return success
     }
@@ -100,7 +101,7 @@ class RealmDataManager(realm: Realm) : DataManager {
                 deleteCascade(dbEntity, realm)
                 success = true
             } else {
-                Log.e(TAG, "delete: ${dto.getDbClass()} with id=${dto.id} NOT FOUND")
+                Log.e(TAG, "delete: ${dto.getDbClass()} with id=${dto.id} not found")
             }
         }
         return success
@@ -124,8 +125,8 @@ class RealmDataManager(realm: Realm) : DataManager {
     /**
      * Create or update an entity.
      */
-    override fun save(dto: Dto): Boolean {
-        return save(dto, true)
+    override fun save(dto: Dto, validate: Boolean): Boolean {
+        return save(dto, true, validate)
     }
 
     // region private methods
@@ -145,27 +146,32 @@ class RealmDataManager(realm: Realm) : DataManager {
         return realm.where(clazz).equalTo("id", id).findFirst()
     }
 
-    private fun save(dto: Dto, deleteDeps: Boolean = false): Boolean {
+    private fun save(dto: Dto, deleteDeps: Boolean = false, validate: Boolean = false): Boolean {
         var success = false
-        val dbEntity = dto.checkValid().toDbModel()
-        if (dbEntity.readyToSave()) {
-            try {
-                realm.executeTransaction {
-                    if (deleteDeps) {
-                        val clazz = dto.getDbClass()
-                        val dbObj = findDb(clazz, dto.id)
-                        dbObj?.let { deleteCascade(it, realm) }
-                        Log.w(TAG, "save: Previous entity deleted")
-                    }
-                    realm.copyToRealmOrUpdate(dbEntity)
-                    success = true
+
+        if (validate) {
+            dto.checkValid()
+        }
+        var dbEntity = dto.toDbModel()
+
+        if (!dbEntity.readyToSave()) {
+            dbEntity = fillDeps(dbEntity)
+        }
+
+        // Try to save the entity
+        try {
+            realm.executeTransaction {
+                if (deleteDeps) {
+                    val clazz = dto.getDbClass()
+                    val dbObj = findDb(clazz, dto.id)
+                    dbObj?.let { deleteCascade(it, realm) }
+                    Log.w(TAG, "save: Previous entity deleted")
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "save: Exception: ${e.message}")
+                realm.copyToRealmOrUpdate(dbEntity)
+                success = true
             }
-        } else {
-            Log.e(TAG, "save: Entity is not ready to be saved")
-            throw Exception("DbModel entity can not be created")
+        } catch (e: Exception) {
+            Log.e(TAG, "save: Exception: ${e.message}")
         }
         return success
     }
@@ -221,11 +227,82 @@ class RealmDataManager(realm: Realm) : DataManager {
     }
 
 
+    /**
+     * Generic function to look for basic deps in the local db before attempting a save that
+     * otherwise would fail.
+     *
+     * Replaces dependencies tagged as @SupportsIdOnly with a local copy of that object.
+     * The id will be used to look for that object in the database.
+     */
+    fun <T : DbModel> fillDeps(me: T, fieldName: String = "", level: Int = 0): T {
+        val TAG = "fillDeps"
+        val TAB = "    "
+
+        val result: T
+        // Take the object out of Realm, otherwise realm proxy object will show us an empty instance.
+        val myself = if (level == 0 && RealmObject.isManaged(me)) realm.copyFromRealm(me) else me
+
+        if (!myself.readyToSave()) {
+            Log.w(TAG, "${TAB.repeat(level)} Object '$fieldName':")
+            val supportsIdOnly = myself.javaClass.isAnnotationPresent(SupportsIdOnly::class.java)
+            if (supportsIdOnly) {
+                val fromDb = findDb(myself.javaClass, myself.id)
+                if (fromDb != null) {
+                    result = realm.copyFromRealm(fromDb) as T
+                } else {
+                    throw Exception("${myself.javaClass.simpleName} with id=${myself.id} not found")
+                }
+            } else {
+                result = fillDepsForFields(myself, level.inc())
+            }
+        } else {
+            result = myself
+        }
+        return result
+    }
+
+    private fun <T : DbModel> fillDepsForFields(myself: T, level: Int = 0): T {
+        val TAG = "fillDepsForFields"
+        val TAB = "    "
+
+        val fields = myself.javaClass.declaredFields
+        Log.i(TAG, "${TAB.repeat(level)} ${myself.javaClass.simpleName} ${myself.id} #fields=${fields.size}")
+
+        // Recursively fill dependencies that are missing.
+        for (field in fields) {
+            field.isAccessible = true
+            try {
+                val type = field.type
+                when {
+                    DbModel::class.java.isAssignableFrom(type) -> {
+                        val dbObject = field.get(myself) as DbModel
+                        val replacement = fillDeps(dbObject, field.name, level.inc())
+                        field.set(myself, replacement)
+                    }
+                    RealmList::class.java.isAssignableFrom(type) -> {
+                        val list = field.get(myself) as RealmList<DbModel>
+                        val dbList = RealmList<RealmModel>()
+                        list.forEach {
+                            dbList.add(fillDeps(it, field.name, level.inc()))
+                        }
+                        field.set(myself, dbList)
+                    }
+                    else -> {
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "${e.message}")
+            }
+        }
+        return myself
+    }
+
+
     companion object {
         val TAG = DataManager::class.java.simpleName
 
     }
 
-    // endregion private methods
+// endregion private methods
 
 }

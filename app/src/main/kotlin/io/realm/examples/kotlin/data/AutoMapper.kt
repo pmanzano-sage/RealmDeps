@@ -15,6 +15,9 @@ import java.util.*
 @Target(AnnotationTarget.FIELD)
 annotation class CascadeOnDelete
 
+@Target(AnnotationTarget.CLASS)
+annotation class SupportsIdOnly
+
 
 fun generateId(): String {
     // foo-8374-4ece-afef-fc7f7cd0e634

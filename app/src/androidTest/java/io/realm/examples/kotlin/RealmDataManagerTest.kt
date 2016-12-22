@@ -3,8 +3,12 @@ package io.realm.examples.kotlin
 import android.test.AndroidTestCase
 import android.util.Log
 import io.realm.*
-import io.realm.examples.kotlin.data.DataManager
+import io.realm.examples.kotlin.data.Dto
 import io.realm.examples.kotlin.data.RealmDataManager
+import io.realm.examples.kotlin.dto.Address
+import io.realm.examples.kotlin.dto.AddressType
+import io.realm.examples.kotlin.dto.ContactPerson
+import io.realm.examples.kotlin.dto.ContactPersonType
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.dummy.db.DbCat
 import io.realm.examples.kotlin.dummy.db.DbPerson
@@ -18,12 +22,18 @@ import kotlin.system.measureTimeMillis
 
 /**
  * @author Pablo Manzano
- * *
- * @since 20/12/16
+ *
+ * A probar:
+ *  - Rellena dependencias de:
+ *    - Un objeto raiz taggeado como @SupportsIdOnly
+ *    - Una dependencia taggeada como @SupportsIdOnly
+ *    - Una lista llena de objetos taggeados como @SupportsIdOnly
+ *    - Una lista llena de objetos que tienen una dependencia taggeada como @SupportsIdOnly
  */
 class RealmDataManagerTest : AndroidTestCase() {
 
-    private lateinit var dataManager: DataManager
+    // TODO VOLVER esto a DataManager y no RealmDataManager
+    private lateinit var dataManager: RealmDataManager
     private var realm: Realm by Delegates.notNull()
 
     // Basic person to work with
@@ -55,41 +65,25 @@ class RealmDataManagerTest : AndroidTestCase() {
         super.tearDown()
     }
 
-    fun getAll() {
+    fun testCreateIdOnlyEntity() {
+        // val contactPersonType = createIdOnlyEntity(ContactPersonType::class.java, "CONTRACTOR")
 
+        // First save the item we are going to look for in the db
+        val contactPersonType = ContactPersonType.create(ContactPersonType.Companion.V3.CONTRACTOR)
+        dataManager.save(contactPersonType, true)
+
+        // Then create a contact person with a partially filled-in contact person type
+        val contactPerson = createPartialContactPerson("111", "Juan", "juan@gmail.com", "656789123")
+        val dbContact = contactPerson.toDbModel()
+
+        // Now replace partially filled-in entities with good ones.
+        val newDbItem = dataManager.fillDeps(dbContact)
+        val newItem = newDbItem.toDto()
+
+        // Finally save the contact into the db
+        dataManager.save(newItem, true)
     }
 
-    fun deleteAll() {
-
-    }
-
-    fun count() {
-
-    }
-
-    fun find() {
-
-    }
-
-    fun update() {
-
-    }
-
-    fun create() {
-
-    }
-
-    fun delete() {
-
-    }
-
-    fun deleteNonCascade() {
-
-    }
-
-    fun save() {
-
-    }
 
     // Some other tests
     fun createInvalidPerson() {
@@ -106,6 +100,21 @@ class RealmDataManagerTest : AndroidTestCase() {
         }
         val numPersons = realm.where(DbPerson::class.java).equalTo("name", personName).findAll().count()
     }
+
+    /**
+     * Creates a dummy Contact Person that is partially filled-in.
+     * Example of usage:
+     *
+     * createPartialContactPerson("111", "Juan", "ref", "juan@gmail.com", "656789123")
+     *
+     */
+    private fun createPartialContactPerson(id: String, name: String, email: String, mobile: String): ContactPerson {
+        val mainAddress = Address.create("street1 main", "street2 main", "town", "county", "postCode", AddressType.Companion.V3.DELIVERY)
+        // We explicitly create an partially filled-in entity for testing purposes
+        val contactPersonTypes = arrayListOf(ContactPersonType("CONTRACTOR"))
+        return ContactPerson.create(contactPersonTypes, name, "job", "telephone", mobile, email, "fax", address = mainAddress)
+    }
+
 
     /**
      * - New toy "Cockie"
@@ -348,5 +357,16 @@ class RealmDataManagerTest : AndroidTestCase() {
     private fun showStatus(txt: String) {
         Log.d("Test", txt)
     }
+
+    private fun <T : Dto> createIdOnlyEntity(clazz: Class<T>, id: String): Dto {
+        // val ctor = clazz.getConstructor(String::class.java)
+        val ctor = clazz.constructors.first()
+        val dto = ctor.newInstance()
+        val field = clazz.declaredFields[0]
+        field.isAccessible = true
+        field.set(dto, id)
+        return dto as T
+    }
+
 
 }

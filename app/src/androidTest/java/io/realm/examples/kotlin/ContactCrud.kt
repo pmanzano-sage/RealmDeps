@@ -4,10 +4,10 @@ import android.test.AndroidTestCase
 import io.realm.Realm
 import io.realm.RealmConfiguration
 import io.realm.examples.kotlin.data.DataManager
-import io.realm.examples.kotlin.dto.*
-import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.data.Dto
 import io.realm.examples.kotlin.data.RealmDataManager
+import io.realm.examples.kotlin.dto.*
+import io.realm.examples.kotlin.dto.definition.SyncStatus
 import junit.framework.Assert
 
 /**
@@ -75,9 +75,14 @@ class ContactCrud : AndroidTestCase() {
         // Exactly the same contact, but we change the postal code of the main address
         val contactUpdated = createContact(CONTACT_ID, "John", "John's ref", "john@gmail.com", "123123123")
         contactUpdated.mainAddress?.postCode = UPDATED_POST_CODE
-        dataManager.update(contactUpdated)
+        dataManager.update(contactUpdated, false)
 
         checkNumEntitiesIs(Contact::class.java, 1)
+
+        // now check the postal code that we have in the db
+        val john = dataManager.find(Contact::class.java, CONTACT_ID) as Contact
+        Assert.assertNotNull(john)
+        Assert.assertEquals(UPDATED_POST_CODE, john.mainAddress?.postCode )
     }
 
 

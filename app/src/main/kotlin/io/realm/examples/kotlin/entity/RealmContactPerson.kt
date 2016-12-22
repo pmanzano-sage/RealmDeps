@@ -4,11 +4,11 @@ import io.realm.RealmList
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
-import io.realm.examples.kotlin.dto.ContactPerson
-import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.data.DbModel
 import io.realm.examples.kotlin.data.convertToDto
 import io.realm.examples.kotlin.data.generateId
+import io.realm.examples.kotlin.dto.ContactPerson
+import io.realm.examples.kotlin.dto.definition.SyncStatus
 import java.util.*
 
 @RealmClass
@@ -34,7 +34,10 @@ open class RealmContactPerson(
     }
 
     override fun readyToSave(): Boolean {
-        return true
+        val typesReady = contactPersonTypes == null || contactPersonTypes!!.fold(true, { ready, it -> ready && it.readyToSave() })
+        val addressReady = address == null || address!!.readyToSave()
+        val ready = !name.isBlank() && typesReady && addressReady
+        return ready
     }
 
     override fun getDtoClass(): Class<out ContactPerson> {
