@@ -1,9 +1,9 @@
 package io.realm.examples.kotlin.dto
 
-import io.realm.examples.kotlin.dto.definition.SyncStatus
-import io.realm.examples.kotlin.data.DbModel
 import io.realm.examples.kotlin.data.Dto
+import io.realm.examples.kotlin.data.RealmDbModel
 import io.realm.examples.kotlin.data.generateId
+import io.realm.examples.kotlin.dto.definition.SyncStatus
 
 /**
  * Common Amount model
@@ -15,11 +15,11 @@ data class Amount(
         val currencyCode: String
 ) : Dto {
 
-    override fun toDbModel(): DbModel {
+    override fun toDbModel(): RealmDbModel {
         throw UnsupportedOperationException("not implemented")
     }
 
-    override fun getDbClass(): Class<out DbModel> {
+    override fun getDbClass(): Class<out RealmDbModel> {
         throw UnsupportedOperationException("not implemented")
     }
 

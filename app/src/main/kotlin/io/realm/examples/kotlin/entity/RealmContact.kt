@@ -4,12 +4,9 @@ import io.realm.RealmList
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
+import io.realm.examples.kotlin.data.*
 import io.realm.examples.kotlin.dto.Contact
 import io.realm.examples.kotlin.dto.definition.SyncStatus
-import io.realm.examples.kotlin.data.CascadeOnDelete
-import io.realm.examples.kotlin.data.DbModel
-import io.realm.examples.kotlin.data.convertToDto
-import io.realm.examples.kotlin.data.generateId
 import java.util.*
 
 @RealmClass
@@ -31,14 +28,22 @@ open class RealmContact(
 
         // Do not cascade since this person may be shared
         open var mainContactPerson: RealmContactPerson? = null
-) : DbModel {
+) : RealmDbModel {
 
     override fun toDto(): Contact {
         return convertToDto(RealmContact::class.java, getDtoClass())
     }
 
-    override fun readyToSave(): Boolean {
-        return true
+    override fun checkValid(): DbModel {
+        if (name!!.isBlank()) {
+            throw IllegalArgumentException("RealmContact name can not be blank!\nOffending instance:\n${this}")
+        }
+        mainAddress?.checkValid()
+        deliveryAddress?.checkValid()
+        contactTypes?.map { it.checkValid() }
+        mainContactPerson?.checkValid()
+        return this
+
     }
 
     override fun getDtoClass(): Class<out Contact> {

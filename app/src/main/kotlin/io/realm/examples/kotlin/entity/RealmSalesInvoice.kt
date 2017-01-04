@@ -4,12 +4,9 @@ import io.realm.RealmList
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
+import io.realm.examples.kotlin.data.*
 import io.realm.examples.kotlin.dto.SalesInvoice
 import io.realm.examples.kotlin.dto.definition.SyncStatus
-import io.realm.examples.kotlin.data.CascadeOnDelete
-import io.realm.examples.kotlin.data.DbModel
-import io.realm.examples.kotlin.data.convertToDto
-import io.realm.examples.kotlin.data.generateId
 import java.util.*
 
 @RealmClass
@@ -39,14 +36,20 @@ open class RealmSalesInvoice(
         open var payments: RealmList<RealmPayment>? = null,
 
         open var contact: RealmContact? = null
-) : DbModel {
+) : RealmDbModel {
 
     override fun toDto(): SalesInvoice {
         return convertToDto(RealmSalesInvoice::class.java, getDtoClass())
     }
 
-    override fun readyToSave(): Boolean {
-        return true
+    override fun checkValid(): DbModel {
+        if (displayAs.isBlank()) {
+            throw IllegalArgumentException("RealmSalesInvoice displayAs can not be blank!\nOffending instance:\n${this}")
+        }
+        invoiceLines?.map { it.checkValid() }
+        payments?.map { it.checkValid() }
+
+        return this
     }
 
     override fun getDtoClass(): Class<out SalesInvoice> {

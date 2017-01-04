@@ -19,10 +19,11 @@ package io.realm.examples.kotlin.dummy.db
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
-import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.data.DbModel
+import io.realm.examples.kotlin.data.RealmDbModel
 import io.realm.examples.kotlin.data.convertToDto
 import io.realm.examples.kotlin.data.generateId
+import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.dummy.model.Toy
 
 @RealmClass
@@ -31,7 +32,7 @@ open class DbToy(
         override var sync: Int = SyncStatus.getDefault().ordinal,
         open var name: String = "",
         open var price: Double = 0.0
-) : DbModel {
+) : RealmDbModel {
 
     // If client code does not provide an id, a random one is generated.
     constructor(name: String, price: Double) : this(
@@ -45,8 +46,11 @@ open class DbToy(
         return Toy::class.java
     }
 
-    override fun readyToSave(): Boolean {
-        return name.isNotEmpty()
+    override fun checkValid(): DbModel {
+        if (name.isBlank()) {
+            throw IllegalArgumentException("DbToy name can not be blank!\nOffending instance:\n${this}")
+        }
+        return this
     }
 
     override fun toString(): String {

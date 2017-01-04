@@ -19,11 +19,11 @@ package io.realm.examples.kotlin.dummy.db
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
-import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.data.CascadeOnDelete
-import io.realm.examples.kotlin.data.DbModel
+import io.realm.examples.kotlin.data.RealmDbModel
 import io.realm.examples.kotlin.data.convertToDto
 import io.realm.examples.kotlin.data.generateId
+import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.dummy.model.Cat
 
 @RealmClass
@@ -34,7 +34,7 @@ open class DbCat(
         open var age: Int = 0,
         // When a dependency is marked as @CascadeOnDelete, its id must be generated based on the parent id.
         @CascadeOnDelete var toy: DbToy? = null
-) : DbModel {
+) : RealmDbModel {
 
     // If client code does not provide an id, a random one is generated.
     constructor(name: String, age: Int, toy: DbToy?) : this(
@@ -49,8 +49,12 @@ open class DbCat(
         return Cat::class.java
     }
 
-    override fun readyToSave(): Boolean {
-        return name.isNotEmpty() && (toy == null || toy!!.readyToSave())
+    override fun checkValid(): DbCat {
+        if (name.isBlank()) {
+            throw IllegalArgumentException("DbCat name can not be blank!\nOffending instance:\n${this}")
+        }
+        toy!!.checkValid()
+        return this
     }
 
     override fun toString(): String {

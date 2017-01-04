@@ -1,10 +1,10 @@
 package io.realm.examples.kotlin.dto
 
-import io.realm.examples.kotlin.dto.definition.SyncStatus
-import io.realm.examples.kotlin.entity.RealmAddress
 import io.realm.examples.kotlin.data.Dto
 import io.realm.examples.kotlin.data.convertToDb
 import io.realm.examples.kotlin.data.generateId
+import io.realm.examples.kotlin.dto.definition.SyncStatus
+import io.realm.examples.kotlin.entity.RealmAddress
 
 /**
  * Common Address model
@@ -26,6 +26,8 @@ data class Address(
     }
 
     override fun checkValid(): Dto {
+        country?.checkValid()
+        addressType?.checkValid()
         return this
     }
 
@@ -46,20 +48,30 @@ data class Address(
          * Address.create( "street1", "street2", "town", "county", "postCode", AddressType.Companion.V3.DELIVERY )
          */
         fun create(
+                id: String? = null,
                 streetOne: String? = "",
                 streetTwo: String? = "",
                 town: String? = "",
                 county: String? = "",
                 postCode: String? = "",
-                type: AddressType.Companion.V3,
-                countryCode: Country.Companion.Code = Country.Companion.Code.UK): Address {
+                type: AddressType.Companion.V3, countryCode: Country.Companion.Code = Country.Companion.Code.UK): Address {
 
             val addressType = AddressType.create(type)
             val country = Country.create(countryCode)
 
+            val finalId: String
+            val status: SyncStatus
+            if (id.isNullOrBlank()) {
+                finalId = generateId()
+                status = SyncStatus.getDefaultLocal()
+            } else {
+                finalId = id!!
+                status = SyncStatus.getDefault()
+            }
+
             return Address(
-                    generateId(),
-                    SyncStatus.getDefault(),
+                    finalId,
+                    status,
                     streetOne,
                     streetTwo,
                     town,

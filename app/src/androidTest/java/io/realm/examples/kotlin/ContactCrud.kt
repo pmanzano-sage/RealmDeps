@@ -58,7 +58,9 @@ class ContactCrud : AndroidTestCase() {
      */
     fun testSaveContact() {
         dataManager.save(contact)
+        // main entity
         checkNumEntitiesIs(Contact::class.java, 1)
+        // dependencies
         checkNumEntitiesIs(Address::class.java, 2)
     }
 
@@ -82,7 +84,7 @@ class ContactCrud : AndroidTestCase() {
         // now check the postal code that we have in the db
         val john = dataManager.find(Contact::class.java, CONTACT_ID) as Contact
         Assert.assertNotNull(john)
-        Assert.assertEquals(UPDATED_POST_CODE, john.mainAddress?.postCode )
+        Assert.assertEquals(UPDATED_POST_CODE, john.mainAddress?.postCode)
     }
 
 
@@ -112,8 +114,8 @@ class ContactCrud : AndroidTestCase() {
      * Creates a dummy Contact.
      */
     private fun createContact(id: String, name: String, reference: String, email: String, mobile: String): Contact {
-        val mainAddress = Address.create("street1 main", "street2 main", "town", "county", "postCode", AddressType.Companion.V3.DELIVERY)
-        val deliveryAddress = Address.create("street1 dely", "street2 dely", "town", "county", "postCode", AddressType.Companion.V3.DELIVERY)
+        val mainAddress = Address.create(null, "street1 main", "street2 main", "town", "county", "postCode", AddressType.Companion.V3.DELIVERY)
+        val deliveryAddress = Address.create(null, "street1 dely", "street2 dely", "town", "county", "postCode", AddressType.Companion.V3.DELIVERY)
         val contactPersonTypes = ContactPersonType.createList(CONTACT_PERSON_TYPES)
         val mainContactPerson = ContactPerson.create(contactPersonTypes, name, "job", "telephone", mobile, email, "fax", address = mainAddress)
         val contactTypes = ContactType.createList(CONTACT_TYPES)

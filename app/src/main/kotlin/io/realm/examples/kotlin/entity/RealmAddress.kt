@@ -3,11 +3,12 @@ package io.realm.examples.kotlin.entity
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
-import io.realm.examples.kotlin.dto.Address
-import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.data.DbModel
+import io.realm.examples.kotlin.data.RealmDbModel
 import io.realm.examples.kotlin.data.convertToDto
 import io.realm.examples.kotlin.data.generateId
+import io.realm.examples.kotlin.dto.Address
+import io.realm.examples.kotlin.dto.definition.SyncStatus
 import java.util.*
 
 @RealmClass
@@ -24,14 +25,16 @@ open class RealmAddress(
         open var postCode: String? = null,
         open var country: RealmCountry? = null,
         var addressType: RealmAddressType? = null
-) : DbModel {
+) : RealmDbModel {
 
     override fun toDto(): Address {
         return convertToDto(RealmAddress::class.java, getDtoClass())
     }
 
-    override fun readyToSave(): Boolean {
-        return true
+    override fun checkValid(): DbModel {
+        country?.checkValid()
+        addressType?.checkValid()
+        return this
     }
 
     override fun getDtoClass(): Class<out Address> {

@@ -12,8 +12,8 @@ import io.realm.examples.kotlin.entity.RealmCountry
 data class Country(
         override val id: String = generateId(),
         override var sync: SyncStatus = SyncStatus.getDefault(),
-        val code: String? = null,
-        val name: String? = null
+        val code: String = "",
+        val name: String = ""
 ) : Dto {
 
     override fun getDbClass(): Class<out RealmCountry> {
@@ -22,11 +22,11 @@ data class Country(
 
     override fun checkValid(): Dto {
         try {
-            Code.valueOf(code!!)
+            Code.valueOf(code)
         } catch (e: IllegalArgumentException) {
             throw IllegalArgumentException("Unsupported country used! \nOffending instance:\n${this}")
         }
-        if (name!!.isBlank()) {
+        if (name.isBlank()) {
             throw IllegalArgumentException("Country name can not be blank!\nOffending instance:\n${this}")
         }
         return this
@@ -37,7 +37,7 @@ data class Country(
     }
 
     override fun toDisplayString(): String {
-        return name ?: ""
+        return name
     }
 
     // Convenient factory methods

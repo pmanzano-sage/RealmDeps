@@ -3,10 +3,7 @@ package io.realm.examples.kotlin.entity
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
-import io.realm.examples.kotlin.data.BackLink
-import io.realm.examples.kotlin.data.DbModel
-import io.realm.examples.kotlin.data.convertToDto
-import io.realm.examples.kotlin.data.generateId
+import io.realm.examples.kotlin.data.*
 import io.realm.examples.kotlin.dto.InvoiceLine
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import java.util.*
@@ -26,14 +23,18 @@ open class RealmInvoiceLine(
         open var taxRate: RealmTaxRate? = null,
         open var totalAmount: Double = 0.0,
         override var parentId: String = ""
-) : DbModel, BackLink {
+) : RealmDbModel, BackLink {
 
     override fun toDto(): InvoiceLine {
         return convertToDto(RealmInvoiceLine::class.java, getDtoClass())
     }
 
-    override fun readyToSave(): Boolean {
-        return true
+    override fun checkValid(): DbModel {
+        if (displayAs.isBlank()) {
+            throw IllegalArgumentException("RealmInvoiceLine displayAs can not be blank!\nOffending instance:\n${this}")
+        }
+        return this
+
     }
 
     override fun getDtoClass(): Class<out InvoiceLine> {

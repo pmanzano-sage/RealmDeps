@@ -16,7 +16,7 @@ interface Dto {
 
     fun isPersistedOnServer() = !StringUtils.isEmpty(id) && !id.startsWith(Constants.FAKE_API_ID_PREFIX)
 
-    fun toDbModel(): DbModel
+    fun toDbModel(): RealmDbModel
     fun checkValid(): Dto
-    fun getDbClass(): Class<out DbModel>
+    fun getDbClass(): Class<out RealmDbModel>
 }

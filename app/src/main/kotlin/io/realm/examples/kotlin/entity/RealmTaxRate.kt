@@ -4,11 +4,12 @@ import io.realm.RealmList
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
-import io.realm.examples.kotlin.dto.TaxRate
-import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.data.DbModel
+import io.realm.examples.kotlin.data.RealmDbModel
 import io.realm.examples.kotlin.data.convertToDto
 import io.realm.examples.kotlin.data.generateId
+import io.realm.examples.kotlin.dto.TaxRate
+import io.realm.examples.kotlin.dto.definition.SyncStatus
 import java.util.*
 
 @RealmClass
@@ -25,14 +26,19 @@ open class RealmTaxRate(
         open var editable: Boolean = false,
         open var deletable: Boolean = false,
         open var subTaxRates: RealmList<RealmSubTaxRate>? = null
-) : DbModel {
+) : RealmDbModel {
 
     override fun toDto(): TaxRate {
         return convertToDto(RealmTaxRate::class.java, getDtoClass())
     }
 
-    override fun readyToSave(): Boolean {
-        return true
+    override fun checkValid(): DbModel {
+        if (name.isBlank()) {
+            throw IllegalArgumentException("RealmTaxRate name can not be blank!\nOffending instance:\n${this}")
+        }
+        subTaxRates?.map { it.checkValid() }
+        return this
+
     }
 
     override fun getDtoClass(): Class<out TaxRate> {

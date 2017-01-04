@@ -28,7 +28,7 @@ class RealmDataManager(realm: Realm) : DataManager {
     override fun getAll(clazz: Class<out Dto>): List<Dto> {
         // TODO There should be a better way to figure out the dbClass (instead of creating an instance)
         val dto = clazz.newInstance()
-        return findAllDb(dto.getDbClass()).map(DbModel::toDto)
+        return findAllDb(dto.getDbClass()).map(RealmDbModel::toDto)
     }
 
     /**
@@ -53,7 +53,7 @@ class RealmDataManager(realm: Realm) : DataManager {
         val dto = clazz.newInstance()
         val dbEntity = findDb(dto.getDbClass(), id)
         if (dbEntity != null) {
-            return realm.copyFromRealm(dbEntity).toDto()
+            return clazz.cast(realm.copyFromRealm(dbEntity).toDto())
         }
         return null
     }
@@ -131,15 +131,15 @@ class RealmDataManager(realm: Realm) : DataManager {
 
     // region private methods
 
-    private fun findAllDb(clazz: Class<out DbModel>): List<DbModel> {
+    private fun findAllDb(clazz: Class<out RealmDbModel>): List<RealmDbModel> {
         return realm.where(clazz).findAll()
     }
 
-    private fun countInDb(clazz: Class<out DbModel>): Long {
+    private fun countInDb(clazz: Class<out RealmDbModel>): Long {
         return realm.where(clazz).count()
     }
 
-    private fun findDb(clazz: Class<out DbModel>, id: String): DbModel? {
+    private fun findDb(clazz: Class<out RealmDbModel>, id: String): RealmDbModel? {
         if (StringUtils.isEmpty(id)) {
             return null
         }
@@ -154,7 +154,9 @@ class RealmDataManager(realm: Realm) : DataManager {
         }
         var dbEntity = dto.toDbModel()
 
-        if (!dbEntity.readyToSave()) {
+        try {
+            dbEntity.checkValid()
+        } catch (e: Exception) {
             dbEntity = fillDeps(dbEntity)
         }
 
@@ -164,8 +166,10 @@ class RealmDataManager(realm: Realm) : DataManager {
                 if (deleteDeps) {
                     val clazz = dto.getDbClass()
                     val dbObj = findDb(clazz, dto.id)
-                    dbObj?.let { deleteCascade(it, realm) }
-                    Log.w(TAG, "save: Previous entity deleted")
+                    dbObj?.let {
+                        deleteCascade(it, realm)
+                        Log.w(TAG, "save: Previous entity ${clazz.simpleName} deleted")
+                    }
                 }
                 realm.copyToRealmOrUpdate(dbEntity)
                 success = true
@@ -178,9 +182,9 @@ class RealmDataManager(realm: Realm) : DataManager {
 
     /**
      * Generic function to cascade a RealmObject deletion.
-     * All DbModel objects that also implement BackLink interface will be deleted.
+     * All RealmDbModel objects that also implement BackLink interface will be deleted.
      */
-    private fun deleteCascade(me: DbModel, realm: Realm, level: Int = 0) {
+    private fun deleteCascade(me: RealmDbModel, realm: Realm, level: Int = 0) {
         val TAG = "deleteCascade"
         val TAB = "    "
 
@@ -196,9 +200,9 @@ class RealmDataManager(realm: Realm) : DataManager {
                 val type = field.type
                 val cascade = field.isAnnotationPresent(CascadeOnDelete::class.java)
                 when {
-                    DbModel::class.java.isAssignableFrom(type) && (BackLink::class.java.isAssignableFrom(type) || cascade) -> {
+                    RealmDbModel::class.java.isAssignableFrom(type) && (BackLink::class.java.isAssignableFrom(type) || cascade) -> {
                         // Get the object from the source field, and delete it
-                        val dbObject = field.get(myself) as? DbModel
+                        val dbObject = field.get(myself) as? RealmDbModel
                         Log.w(TAG, "${TAB.repeat(level)} Object '${field.name}':")
                         // First of all, delete that object dependencies
                         dbObject?.let { deleteCascade(it, realm, level.inc()) }
@@ -207,7 +211,7 @@ class RealmDataManager(realm: Realm) : DataManager {
                         val list = field.get(myself) as RealmList<*>
                         Log.w(TAG, "${TAB.repeat(level)} List '${field.name}': ${list.size} items")
                         // Get the list from the source field, and deleteCascade all the entities in the list.
-                        list.map { it as DbModel? }.filterNotNull().map { deleteCascade(it, realm, level.inc()) }
+                        list.map { it as RealmDbModel? }.filterNotNull().map { deleteCascade(it, realm, level.inc()) }
                     }
                     else -> {
                     }
@@ -234,15 +238,20 @@ class RealmDataManager(realm: Realm) : DataManager {
      * Replaces dependencies tagged as @SupportsIdOnly with a local copy of that object.
      * The id will be used to look for that object in the database.
      */
-    fun <T : DbModel> fillDeps(me: T, fieldName: String = "", level: Int = 0): T {
+    fun <T : RealmDbModel> fillDeps(me: T, fieldName: String = "", level: Int = 0): T {
         val TAG = "fillDeps"
         val TAB = "    "
 
-        val result: T
+        var result: T
         // Take the object out of Realm, otherwise realm proxy object will show us an empty instance.
         val myself = if (level == 0 && RealmObject.isManaged(me)) realm.copyFromRealm(me) else me
 
-        if (!myself.readyToSave()) {
+        try {
+            // If no exception is triggered, result will be myself directly
+            myself.checkValid()
+            result = myself
+        } catch (e: Exception) {
+            // If there is an exception we will try to fill in the gaps
             Log.w(TAG, "${TAB.repeat(level)} Object '$fieldName':")
             val supportsIdOnly = myself.javaClass.isAnnotationPresent(SupportsIdOnly::class.java)
             if (supportsIdOnly) {
@@ -255,13 +264,11 @@ class RealmDataManager(realm: Realm) : DataManager {
             } else {
                 result = fillDepsForFields(myself, level.inc())
             }
-        } else {
-            result = myself
         }
         return result
     }
 
-    private fun <T : DbModel> fillDepsForFields(myself: T, level: Int = 0): T {
+    private fun <T : RealmDbModel> fillDepsForFields(myself: T, level: Int = 0): T {
         val TAG = "fillDepsForFields"
         val TAB = "    "
 
@@ -274,13 +281,13 @@ class RealmDataManager(realm: Realm) : DataManager {
             try {
                 val type = field.type
                 when {
-                    DbModel::class.java.isAssignableFrom(type) -> {
-                        val dbObject = field.get(myself) as DbModel
+                    RealmDbModel::class.java.isAssignableFrom(type) -> {
+                        val dbObject = field.get(myself) as RealmDbModel
                         val replacement = fillDeps(dbObject, field.name, level.inc())
                         field.set(myself, replacement)
                     }
                     RealmList::class.java.isAssignableFrom(type) -> {
-                        val list = field.get(myself) as RealmList<DbModel>
+                        val list = field.get(myself) as RealmList<RealmDbModel>
                         val dbList = RealmList<RealmModel>()
                         list.forEach {
                             dbList.add(fillDeps(it, field.name, level.inc()))

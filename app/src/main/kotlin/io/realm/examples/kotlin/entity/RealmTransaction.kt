@@ -3,11 +3,12 @@ package io.realm.examples.kotlin.entity
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
-import io.realm.examples.kotlin.dto.Transaction
-import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.data.DbModel
+import io.realm.examples.kotlin.data.RealmDbModel
 import io.realm.examples.kotlin.data.convertToDto
 import io.realm.examples.kotlin.data.generateId
+import io.realm.examples.kotlin.dto.Transaction
+import io.realm.examples.kotlin.dto.definition.SyncStatus
 import java.util.*
 
 @RealmClass
@@ -31,14 +32,24 @@ open class RealmTransaction(
         open var contact: RealmContact? = null,
         open var isReadonly: Boolean = false,
         open var timestamp: String = ""
-) : DbModel {
+) : RealmDbModel {
 
     override fun toDto(): Transaction {
         return convertToDto(RealmTransaction::class.java, getDtoClass())
     }
 
-    override fun readyToSave(): Boolean {
-        return true
+    override fun checkValid(): DbModel {
+        if (title!!.isBlank()) {
+            throw IllegalArgumentException("RealmTransaction title can not be blank!\nOffending instance:\n${this}")
+        }
+        // TODO Amount is not checked yet
+        accountSource?.checkValid()
+        accountDest?.checkValid()
+        category?.checkValid()
+        attachment?.checkValid()
+        contact?.checkValid()
+        taxRate?.checkValid()
+        return this
     }
 
     override fun getDtoClass(): Class<out Transaction> {

@@ -5,10 +5,7 @@ import android.util.Log
 import io.realm.*
 import io.realm.examples.kotlin.data.Dto
 import io.realm.examples.kotlin.data.RealmDataManager
-import io.realm.examples.kotlin.dto.Address
-import io.realm.examples.kotlin.dto.AddressType
-import io.realm.examples.kotlin.dto.ContactPerson
-import io.realm.examples.kotlin.dto.ContactPersonType
+import io.realm.examples.kotlin.dto.*
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.dummy.db.DbCat
 import io.realm.examples.kotlin.dummy.db.DbPerson
@@ -85,17 +82,61 @@ class RealmDataManagerTest : AndroidTestCase() {
     }
 
 
+    fun testDependencyLookup() {
+        val id = "ADR1"
+
+        val street1Updated = "street1 updated"
+        val street2Updated = "street2 updated"
+
+        val dep1Id = "XYZ"
+        val dep2Id = "US"
+
+        // Insert valid dependencies into the db
+        val existingItem1 = AddressType(dep1Id, SyncStatus.SYNC_SUCCESS, dep1Id, dep1Id)
+        dataManager.save(existingItem1)
+        val existingItem2 = Country(dep2Id, SyncStatus.SYNC_SUCCESS, dep2Id, dep2Id)
+        dataManager.save(existingItem2)
+
+        // Create invalid dependencies to fill parent entity
+        val invalidItem1 = AddressType(dep1Id)
+        val invalidItem2 = Country(dep2Id)
+        val invalidEntity = Address(id, SyncStatus.SYNC_SUCCESS, street1Updated, street2Updated, "town", "county", "postCode", invalidItem2, invalidItem1)
+
+        val dbAddress = invalidEntity.toDbModel()
+        val newDbItem = dataManager.fillDeps(dbAddress)
+        val newItem = newDbItem.toDto()
+
+        // Finally save the contact into the db
+        dataManager.save(newItem, true)
+
+//
+//        try {
+//            dataManager.save(invalidEntity, false)
+//        } catch(e: Exception) {
+//            Log.e("ugh", "$e")
+//            Assert.fail("Missing info should have been searched from the db")
+//        }
+//
+//        // Now check that the item was actually modified
+//        val fromDb = dataManager.find(Address::class.java, id) as Address
+//        Assert.assertNotNull(fromDb)
+//        Assert.assertEquals(fromDb.addressType, existingItem1)
+//        Assert.assertEquals(fromDb.country, existingItem2)
+    }
+
+
     // Some other tests
     fun createInvalidPerson() {
         val personName = "J"
         val dog = DbToy("")
         val cats = RealmList<DbCat>(DbCat("Michifus", 1, null), DbCat("", 2, ball), DbCat("Flora", 3, null))
         val p1 = DbPerson("666", SyncStatus.getDefault().ordinal, personName, 20, dog, cats)
-        if (p1.readyToSave()) {
+        try {
+            p1.checkValid()
             realm.executeTransaction {
                 realm.copyToRealmOrUpdate(p1)
             }
-        } else {
+        } catch (e: Exception) {
             showStatus("sorry invalid person")
         }
         val numPersons = realm.where(DbPerson::class.java).equalTo("name", personName).findAll().count()
@@ -109,7 +150,7 @@ class RealmDataManagerTest : AndroidTestCase() {
      *
      */
     private fun createPartialContactPerson(id: String, name: String, email: String, mobile: String): ContactPerson {
-        val mainAddress = Address.create("street1 main", "street2 main", "town", "county", "postCode", AddressType.Companion.V3.DELIVERY)
+        val mainAddress = Address.create(null, "street1 main", "street2 main", "town", "county", "postCode", AddressType.Companion.V3.DELIVERY)
         // We explicitly create an partially filled-in entity for testing purposes
         val contactPersonTypes = arrayListOf(ContactPersonType("CONTRACTOR"))
         return ContactPerson.create(contactPersonTypes, name, "job", "telephone", mobile, email, "fax", address = mainAddress)

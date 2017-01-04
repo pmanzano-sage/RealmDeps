@@ -5,6 +5,7 @@ import io.realm.annotations.PrimaryKey
 import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
 import io.realm.examples.kotlin.data.DbModel
+import io.realm.examples.kotlin.data.RealmDbModel
 import io.realm.examples.kotlin.data.convertToDto
 import io.realm.examples.kotlin.data.generateId
 import io.realm.examples.kotlin.dto.ContactPerson
@@ -27,17 +28,19 @@ open class RealmContactPerson(
         open var fax: String = "",
         open var isMainContact: Boolean = false,
         open var address: RealmAddress? = null
-) : DbModel {
+) : RealmDbModel {
 
     override fun toDto(): ContactPerson {
         return convertToDto(RealmContactPerson::class.java, getDtoClass())
     }
 
-    override fun readyToSave(): Boolean {
-        val typesReady = contactPersonTypes == null || contactPersonTypes!!.fold(true, { ready, it -> ready && it.readyToSave() })
-        val addressReady = address == null || address!!.readyToSave()
-        val ready = !name.isBlank() && typesReady && addressReady
-        return ready
+    override fun checkValid(): DbModel {
+        if (name.isBlank()) {
+            throw IllegalArgumentException("RealmContactPerson name can not be blank!\nOffending instance:\n${this}")
+        }
+        contactPersonTypes?.map { it.checkValid() }
+        address?.checkValid()
+        return this
     }
 
     override fun getDtoClass(): Class<out ContactPerson> {

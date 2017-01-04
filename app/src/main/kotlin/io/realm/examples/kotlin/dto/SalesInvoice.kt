@@ -1,10 +1,10 @@
 package io.realm.examples.kotlin.dto
 
-import io.realm.examples.kotlin.dto.definition.SyncStatus
-import io.realm.examples.kotlin.entity.RealmSalesInvoice
 import io.realm.examples.kotlin.data.Dto
 import io.realm.examples.kotlin.data.convertToDb
 import io.realm.examples.kotlin.data.generateId
+import io.realm.examples.kotlin.dto.definition.SyncStatus
+import io.realm.examples.kotlin.entity.RealmSalesInvoice
 import org.joda.time.LocalDate
 import java.util.*
 
@@ -42,7 +42,7 @@ data class SalesInvoice(
 
     override fun checkValid(): Dto {
         if (displayAs.isBlank()) {
-            throw IllegalArgumentException("Sales invoice displayAs can not be blank!\nOffending instance:\n${this}")
+            throw IllegalArgumentException("SalesInvoice displayAs can not be blank!\nOffending instance:\n${this}")
         }
         invoiceLines?.map { it.checkValid() }
         payments?.map { it.checkValid() }

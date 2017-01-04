@@ -35,6 +35,10 @@ public enum SyncStatus {
         return SYNC_SUCCESS;
     }
 
+    public static SyncStatus getDefaultLocal() {
+        return NEEDS_SYNC_CREATE;
+    }
+
     public boolean hasError() {
         return this == SYNC_ERROR || this == SYNC_RETRY_CREATE || this == SYNC_RETRY_UPDATE || this == SYNC_RETRY_DELETE;
     }

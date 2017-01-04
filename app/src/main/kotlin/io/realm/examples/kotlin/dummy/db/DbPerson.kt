@@ -21,11 +21,8 @@ import io.realm.annotations.Ignore
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
+import io.realm.examples.kotlin.data.*
 import io.realm.examples.kotlin.dto.definition.SyncStatus
-import io.realm.examples.kotlin.data.CascadeOnDelete
-import io.realm.examples.kotlin.data.DbModel
-import io.realm.examples.kotlin.data.convertToDto
-import io.realm.examples.kotlin.data.generateId
 import io.realm.examples.kotlin.dummy.model.Person
 
 // Your model has to extend RealmObject or be annotated with @RealmClass. Furthermore, the class and all of the
@@ -59,7 +56,7 @@ open class DbPerson(
         // You can instruct Realm to ignore a field and not persist it.
         @Ignore open var tempReference: Int = 0
 
-) : DbModel {
+) : RealmDbModel {
     // The Kotlin compiler generates standard getters and setters.
     // Realm will overload them and code inside them is ignored.
     // So if you prefer you can also just have empty abstract methods.
@@ -77,8 +74,13 @@ open class DbPerson(
         return Person::class.java
     }
 
-    override fun readyToSave(): Boolean {
-        return name.isNotEmpty() && (toy == null || toy!!.readyToSave()) && cats.fold(true) { ready, next -> ready && next.readyToSave() }
+    override fun checkValid(): DbModel {
+        if (name.isBlank()) {
+            throw IllegalArgumentException("DbPerson name can not be blank!\nOffending instance:\n${this}")
+        }
+        toy!!.checkValid()
+        cats.map(DbCat::checkValid)
+        return this
     }
 
     override fun toString(): String {

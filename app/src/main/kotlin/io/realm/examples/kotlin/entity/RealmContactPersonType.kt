@@ -1,13 +1,9 @@
 package io.realm.examples.kotlin.entity
 
-import android.util.Log
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
-import io.realm.examples.kotlin.data.DbModel
-import io.realm.examples.kotlin.data.SupportsIdOnly
-import io.realm.examples.kotlin.data.convertToDto
-import io.realm.examples.kotlin.data.generateId
+import io.realm.examples.kotlin.data.*
 import io.realm.examples.kotlin.dto.ContactPersonType
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import java.util.*
@@ -22,16 +18,20 @@ open class RealmContactPersonType(
 
         open var symbol: String = "",
         open var name: String = ""
-) : DbModel {
+) : RealmDbModel {
 
     override fun toDto(): ContactPersonType {
         return convertToDto(RealmContactPersonType::class.java, getDtoClass())
     }
 
-    override fun readyToSave(): Boolean {
-        val ready = !symbol.isBlank() && !name.isBlank()
-        Log.d("RealmContactPersonType", "ready=$ready")
-        return ready
+    override fun checkValid(): DbModel {
+        if (name.isBlank()) {
+            throw IllegalArgumentException("RealmContactPersonType name can not be blank!\nOffending instance:\n${this}")
+        }
+        if (symbol.isBlank()) {
+            throw IllegalArgumentException("RealmContactPersonType symbol can not be blank!\nOffending instance:\n${this}")
+        }
+        return this
     }
 
     override fun getDtoClass(): Class<out ContactPersonType> {

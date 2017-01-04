@@ -3,14 +3,13 @@ package io.realm.examples.kotlin.entity
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
+import io.realm.examples.kotlin.data.*
 import io.realm.examples.kotlin.dto.AccountType
 import io.realm.examples.kotlin.dto.definition.SyncStatus
-import io.realm.examples.kotlin.data.DbModel
-import io.realm.examples.kotlin.data.convertToDto
-import io.realm.examples.kotlin.data.generateId
 import java.util.*
 
 @RealmClass
+@SupportsIdOnly
 open class RealmAccountType(
         @PrimaryKey @Required override var id: String = generateId(),
         override var sync: Int = SyncStatus.getDefault().ordinal,
@@ -18,15 +17,22 @@ open class RealmAccountType(
         open var updateDate: Date = Date(),
 
         open var name: String = "",
-        open var symbol: String? = ""
-) : DbModel {
+        open var symbol: String = ""
+) : RealmDbModel {
 
     override fun toDto(): AccountType {
         return convertToDto(RealmAccountType::class.java, getDtoClass())
     }
 
-    override fun readyToSave(): Boolean {
-        return name.isNotEmpty()
+    override fun checkValid(): DbModel {
+        if (name.isBlank()) {
+            throw IllegalArgumentException("RealmAccountType name can not be blank!\nOffending instance:\n${this}")
+        }
+        if (symbol.isBlank()) {
+            throw IllegalArgumentException("RealmAccountType symbol can not be blank!\nOffending instance:\n${this}")
+        }
+        return this
+
     }
 
     override fun getDtoClass(): Class<out AccountType> {

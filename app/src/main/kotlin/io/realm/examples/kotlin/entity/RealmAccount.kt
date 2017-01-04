@@ -4,11 +4,12 @@ import android.util.Log
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
+import io.realm.examples.kotlin.data.DbModel
+import io.realm.examples.kotlin.data.RealmDbModel
+import io.realm.examples.kotlin.data.generateId
 import io.realm.examples.kotlin.dto.Account
 import io.realm.examples.kotlin.dto.Amount
 import io.realm.examples.kotlin.dto.definition.SyncStatus
-import io.realm.examples.kotlin.data.DbModel
-import io.realm.examples.kotlin.data.generateId
 import java.text.DecimalFormat
 import java.text.ParseException
 import java.util.*
@@ -21,13 +22,13 @@ open class RealmAccount(
         open var updateDate: Date = Date(),
 
         open var nominalCode: Int = 0,
-        open var displayName: String? = null,
-        open var number: String? = null,
-        open var accountType: RealmAccountType = RealmAccountType(),
+        open var displayName: String = "",
+        open var number: String = "",
+        open var accountType: RealmAccountType? = null,
         open var balance: String? = null,
         open var currency: String = "",
         open var editable: Boolean = true
-) : DbModel {
+) : RealmDbModel {
 
 
     //    override fun toDto(): Dto {
@@ -41,21 +42,22 @@ open class RealmAccount(
         } catch (exception: ParseException) {
             Log.d("", "convertCustomToMain() balance parsing failed for string " + balance + ": " + exception.message)
         }
-        val account = Account(id, SyncStatus.values()[sync],
-                displayName!!, number!!, accountType.toDto(), nominalCode,
+        val account = Account(id, SyncStatus.values()[sync], displayName, number, accountType?.toDto(), nominalCode,
                 Amount(balanceNum, currency))
         account.editable = editable
         return account
     }
 
 
-    override fun readyToSave(): Boolean {
-        // TODO check this criteria
-        return accountType.readyToSave()
+    override fun checkValid(): DbModel {
+        if (displayName.isBlank()) {
+            throw IllegalArgumentException("RealmAccount displayName can not be blank!\nOffending instance:\n${this}")
+        }
+        accountType!!.checkValid()
+        return this
     }
 
     override fun getDtoClass(): Class<out Account> {
-        Log.d("PAAAUUUUU", "MyClass=${this.javaClass}")
         return Account::class.java
     }
 

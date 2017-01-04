@@ -156,6 +156,7 @@ class SalesInvoiceCrud : AndroidTestCase() {
     }
 
 
+    //region Auxiliary methods
     /**
      * Create a test invoice using the line items received in the last param.
      */
@@ -251,8 +252,8 @@ class SalesInvoiceCrud : AndroidTestCase() {
      * Creates a dummy Contact.
      */
     private fun createContact(name: String, reference: String, email: String, mobile: String): Contact {
-        val mainAddress = Address.create("street1 main", "street2 main", "town", "county", "postCode", AddressType.Companion.V3.DELIVERY)
-        val deliveryAddress = Address.create("street1 dely", "street2 dely", "town", "county", "postCode", AddressType.Companion.V3.DELIVERY)
+        val mainAddress = Address.create(null, "street1 main", "street2 main", "town", "county", "postCode", AddressType.Companion.V3.DELIVERY)
+        val deliveryAddress = Address.create(null, "street1 dely", "street2 dely", "town", "county", "postCode", AddressType.Companion.V3.DELIVERY)
         val contactPersonTypes = ContactPersonType.createList(CONTACT_PERSON_TYPES)
         val mainContactPerson = ContactPerson.create(contactPersonTypes, name, "job", "telephone", mobile, email, "fax", address = mainAddress)
         val contactTypes = ContactType.createList(CONTACT_TYPES)
@@ -262,6 +263,7 @@ class SalesInvoiceCrud : AndroidTestCase() {
     private fun <T : Dto> checkNumEntitiesIs(clazz: Class<T>, numEntities: Long) {
         Assert.assertEquals(numEntities, dataManager.count(clazz))
     }
+    //endregion
 
 
 }

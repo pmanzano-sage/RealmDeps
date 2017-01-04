@@ -3,12 +3,10 @@ package io.realm.examples.kotlin.entity
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
+import io.realm.examples.kotlin.data.*
+import io.realm.examples.kotlin.dto.Amount
 import io.realm.examples.kotlin.dto.Payment
 import io.realm.examples.kotlin.dto.definition.SyncStatus
-import io.realm.examples.kotlin.data.BackLink
-import io.realm.examples.kotlin.data.DbModel
-import io.realm.examples.kotlin.data.convertToDto
-import io.realm.examples.kotlin.data.generateId
 import java.util.*
 
 @RealmClass
@@ -24,14 +22,20 @@ open class RealmPayment(
         open var date: String = "",
         open var account: RealmAccount? = null,
         override var parentId: String = ""
-) : DbModel, BackLink {
+) : RealmDbModel, BackLink {
 
     override fun toDto(): Payment {
         return convertToDto(RealmPayment::class.java, getDtoClass())
     }
 
-    override fun readyToSave(): Boolean {
-        return true
+    override fun checkValid(): DbModel {
+        if (reference.isBlank()) {
+            throw IllegalArgumentException("RealmPayment reference can not be blank!\nOffending instance:\n${this}")
+        }
+        if (!Amount.isCurrencyCodeValid(currencyCode)) {
+            throw IllegalArgumentException("RealmPayment currency code is not supported!\nOffending instance:\n${this}")
+        }
+        return this
     }
 
     override fun getDtoClass(): Class<out Payment> {

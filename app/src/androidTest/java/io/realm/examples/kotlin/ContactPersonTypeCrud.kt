@@ -4,6 +4,7 @@ import android.test.AndroidTestCase
 import io.realm.Realm
 import io.realm.RealmConfiguration
 import io.realm.examples.kotlin.data.DataManager
+import io.realm.examples.kotlin.data.Dto
 import io.realm.examples.kotlin.data.RealmDataManager
 import io.realm.examples.kotlin.dto.ContactPersonType
 import junit.framework.Assert
@@ -50,7 +51,7 @@ class ContactPersonTypeCrud : AndroidTestCase() {
      */
     fun testSaveContact() {
         dataManager.save(contactPersonType)
-        checkNumContactPersonTypesIs(1)
+        checkNumEntitiesIs(ContactPersonType::class.java, 1)
     }
 
     /**
@@ -80,11 +81,8 @@ class ContactPersonTypeCrud : AndroidTestCase() {
 
     //region Auxiliary functions
 
-    private fun checkNumContactPersonTypesIs(numContacts: Int) {
-        // Check the number of persons in the db
-        val personsTypes = dataManager.getAll(ContactPersonType::class.java)
-        Assert.assertNotNull(personsTypes)
-        Assert.assertEquals(numContacts, personsTypes.size)
+    private fun <T : Dto> checkNumEntitiesIs(clazz: Class<T>, numEntities: Long) {
+        Assert.assertEquals(numEntities, dataManager.count(clazz))
     }
 
     //endregion
