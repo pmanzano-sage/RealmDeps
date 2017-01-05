@@ -11,8 +11,8 @@ data class Contact(
         override val id: String = generateId(),
         override var sync: SyncStatus = SyncStatus.getDefault(),
         var contactTypes: List<ContactType>? = null,
-        var name: String? = "",
-        var reference: String? = "",
+        var name: String = "",
+        var reference: String = "",
         var mainAddress: Address? = null,
         var deliveryAddress: Address? = null,
         var mainContactPerson: ContactPerson? = null
@@ -23,7 +23,7 @@ data class Contact(
     }
 
     override fun checkValid(): Dto {
-        if (name!!.isBlank()) {
+        if (name.isBlank()) {
             throw InvalidFieldException("Contact name can not be blank!\nOffending instance:\n${this}")
         }
         try {

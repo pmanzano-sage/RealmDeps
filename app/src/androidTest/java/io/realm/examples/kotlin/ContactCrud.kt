@@ -1,6 +1,7 @@
 package io.realm.examples.kotlin
 
 import android.test.AndroidTestCase
+import android.util.Log
 import io.realm.Realm
 import io.realm.RealmConfiguration
 import io.realm.examples.kotlin.data.*
@@ -101,6 +102,74 @@ class ContactCrud : AndroidTestCase() {
         }
     }
 
+    /**
+     * DEPENDENCY LOOKUP
+     */
+    fun testDependencyLookup() {
+        // Insert into db the dependencies that will be searched by fillDeps
+        val invalidAddressType = AddressType(invalidId, SyncStatus.SYNC_SUCCESS, invalidId, invalidId)
+        dataManager.save(invalidAddressType)
+
+        val invalidItem = createInvalidContact(CONTACT_ID)
+        try {
+            dataManager.save(invalidItem, false)
+        } catch(e: Exception) {
+            Assert.fail("Missing info should have been searched from the db.\nException: ${e.message}")
+        }
+
+        // Now check that the item was actually modified
+        val fromDb = dataManager.find(Contact::class.java, CONTACT_ID) as Contact
+        Assert.assertNotNull(fromDb)
+        Assert.assertEquals(fromDb.mainAddress?.addressType?.symbol, invalidId)
+    }
+
+    /**
+     * DEPENDENCY LOOKUP FAILURE (NOT FOUND)
+     *
+     * The same test as testDependencyLookup, but this time the missing dependency is not in the db.
+     */
+    fun testDependencyLookupFail() {
+
+        // Create an invalid entity
+        val invalidEntity = createInvalidContact(CONTACT_ID)
+        try {
+            dataManager.save(invalidEntity, false)
+            Assert.fail("A NotFoundException should be triggered")
+        } catch(e: NotFoundException) {
+            Log.w("cool", "$e")
+        } catch(e: Exception) {
+            e.printStackTrace()
+            Assert.fail("Should have thrown a NotFoundException instead of ${e.javaClass.simpleName}")
+        }
+
+        // Now check that the item was actually NOT saved
+        checkNumEntitiesIs(Contact::class.java, 0)
+    }
+
+
+    /**
+     * DEPENDENCY LOOKUP FAILURE (INVALID FIELD)
+     *
+     * The same test as testDependencyLookup, but this time the missing field is not a dependency.
+     */
+    fun testDependencyLookupFail2() {
+
+        // Create an invalid entity
+        val invalidEntity = createInvalidContactNotFixable(CONTACT_ID)
+        try {
+            dataManager.save(invalidEntity, false)
+            Assert.fail("A InvalidFieldException should be triggered")
+        } catch(e: InvalidFieldException) {
+            Log.w("cool", "$e")
+        } catch(e: Exception) {
+            e.printStackTrace()
+            Assert.fail("Should have thrown a InvalidFieldException instead of ${e.javaClass.simpleName}")
+        }
+
+        // Now check that the item was actually NOT saved
+        checkNumEntitiesIs(Contact::class.java, 0)
+    }
+
 
     //region Auxiliary functions
 
@@ -135,6 +204,14 @@ class ContactCrud : AndroidTestCase() {
         val mainContactPerson = ContactPerson.create(contactPersonTypes, name, "job", "telephone", "mobile", "email", "fax", address = invalidAddress)
         val contactTypes = ContactType.createList(CONTACT_TYPES)
         return Contact(id, SyncStatus.SYNC_SUCCESS, contactTypes, name, "reference", invalidAddress, deliveryAddress, mainContactPerson)
+    }
+
+    /**
+     * This Contact can not be fixed because the name is missing!
+     * 'name' is a mandatory field.
+     */
+    fun createInvalidContactNotFixable(id: String): Contact {
+        return createContact(CONTACT_ID, "", "John's ref", "john@gmail.com", "123123123")
     }
 
     //endregion
