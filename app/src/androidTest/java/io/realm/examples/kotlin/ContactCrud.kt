@@ -48,7 +48,7 @@ class ContactCrud : AndroidTestCase() {
     /**
      * SAVE
      */
-    fun testSaveContact() {
+    fun testSave() {
         dataManager.save(contact)
         // main entity
         checkNumEntitiesIs(Contact::class.java, 1)
@@ -59,7 +59,7 @@ class ContactCrud : AndroidTestCase() {
     /**
      * UPDATE
      */
-    fun testUpdateContact() {
+    fun testUpdate() {
         dataManager.save(contact)
         // Exactly the same contact, but we change the postal code of the main address
         val contactUpdated = createContact(CONTACT_ID, "John", "John's ref", "john@gmail.com", "123123123")
@@ -78,7 +78,7 @@ class ContactCrud : AndroidTestCase() {
     /**
      * DELETE
      */
-    fun testDeleteContact() {
+    fun testDelete() {
         dataManager.delete(contact)
         checkNumEntitiesIs(Contact::class.java, 0)
         checkNumEntitiesIs(Address::class.java, 0)
