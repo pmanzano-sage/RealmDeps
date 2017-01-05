@@ -12,15 +12,14 @@ import junit.framework.Assert
 /**
  * @author Pablo Manzano
  */
-class ContactCrud : AndroidTestCase() {
+class ContactPersonCrud : AndroidTestCase() {
 
     private lateinit var dataManager: DataManager
 
-    private val CONTACT_TYPES = arrayListOf(ContactType.Companion.V3.PURCHASING, ContactType.Companion.V3.ACCOUNTS)
     private val CONTACT_PERSON_TYPES = arrayListOf(ContactPersonType.Companion.V3.CONTRACTOR)
     private val CONTACT_ID = "1234"
     private val UPDATED_POST_CODE = "08030"
-    private var contact = createContact(CONTACT_ID, "John", "John's ref", "john@gmail.com", "123123123")
+    private var contact = createContactPerson(CONTACT_ID, "John", "john@gmail.com", "123123123")
     private val invalidId = "invalidId"
 
     /**
@@ -50,7 +49,7 @@ class ContactCrud : AndroidTestCase() {
     fun testSave() {
         dataManager.save(contact)
         // main entity
-        checkNumEntitiesIs(Contact::class.java, 1)
+        checkNumEntitiesIs(ContactPerson::class.java, 1)
         // dependencies
         checkNumEntitiesIs(Address::class.java, 2)
     }
@@ -61,14 +60,14 @@ class ContactCrud : AndroidTestCase() {
     fun testUpdate() {
         dataManager.save(contact)
         // Exactly the same contact, but we change the postal code of the main address
-        val contactUpdated = createContact(CONTACT_ID, "John", "John's ref", "john@gmail.com", "123123123")
-        contactUpdated.mainAddress?.postCode = UPDATED_POST_CODE
+        val contactUpdated = createContactPerson(CONTACT_ID, "John", "john@gmail.com", "123123123")
+        contactUpdated.address?.postCode = UPDATED_POST_CODE
         dataManager.update(contactUpdated, false)
 
         checkNumEntitiesIs(Contact::class.java, 1)
 
         // now check the postal code that we have in the db
-        val john = dataManager.find(Contact::class.java, CONTACT_ID) as Contact
+        val john = dataManager.find(ContactPerson::class.java, CONTACT_ID) as Contact
         Assert.assertNotNull(john)
         Assert.assertEquals(UPDATED_POST_CODE, john.mainAddress?.postCode)
     }
@@ -79,7 +78,7 @@ class ContactCrud : AndroidTestCase() {
      */
     fun testDelete() {
         dataManager.delete(contact)
-        checkNumEntitiesIs(Contact::class.java, 0)
+        checkNumEntitiesIs(ContactPerson::class.java, 0)
         checkNumEntitiesIs(Address::class.java, 0)
     }
 
@@ -88,7 +87,7 @@ class ContactCrud : AndroidTestCase() {
      */
     fun testValidation() {
         val err = "Should have thrown a InvalidDependency/InvalidField exception"
-        val invalidItem = createInvalidContact(CONTACT_ID)
+        val invalidItem = createInvalidContactPerson(CONTACT_ID)
         try {
             dataManager.save(invalidItem)
             Assert.fail(err)
@@ -108,7 +107,7 @@ class ContactCrud : AndroidTestCase() {
         val invalidAddressType = AddressType(invalidId, SyncStatus.SYNC_SUCCESS, invalidId, invalidId)
         dataManager.save(invalidAddressType)
 
-        val invalidItem = createInvalidContact(CONTACT_ID)
+        val invalidItem = createInvalidContactPerson(CONTACT_ID)
         try {
             dataManager.save(invalidItem, false)
         } catch(e: Exception) {
@@ -116,9 +115,9 @@ class ContactCrud : AndroidTestCase() {
         }
 
         // Now check that the item was actually modified
-        val fromDb = dataManager.find(Contact::class.java, CONTACT_ID) as Contact
+        val fromDb = dataManager.find(ContactPerson::class.java, CONTACT_ID) as ContactPerson
         Assert.assertNotNull(fromDb)
-        Assert.assertEquals(fromDb.mainAddress?.addressType?.symbol, invalidId)
+        Assert.assertEquals(fromDb.address?.addressType?.symbol, invalidId)
     }
 
     /**
@@ -129,7 +128,7 @@ class ContactCrud : AndroidTestCase() {
     fun testDependencyLookupFail() {
 
         // Create an invalid entity
-        val invalidEntity = createInvalidContact(CONTACT_ID)
+        val invalidEntity = createInvalidContactPerson(CONTACT_ID)
         try {
             dataManager.save(invalidEntity, false)
             Assert.fail("A NotFoundException should be triggered")
@@ -141,7 +140,7 @@ class ContactCrud : AndroidTestCase() {
         }
 
         // Now check that the item was actually NOT saved
-        checkNumEntitiesIs(Contact::class.java, 0)
+        checkNumEntitiesIs(ContactPerson::class.java, 0)
     }
 
 
@@ -153,7 +152,7 @@ class ContactCrud : AndroidTestCase() {
     fun testDependencyLookupFail2() {
 
         // Create an invalid entity
-        val invalidEntity = createInvalidContactNotFixable(CONTACT_ID)
+        val invalidEntity = createInvalidContactPersonNotFixable(CONTACT_ID)
         try {
             dataManager.save(invalidEntity, false)
             Assert.fail("A InvalidFieldException should be triggered")
@@ -165,7 +164,7 @@ class ContactCrud : AndroidTestCase() {
         }
 
         // Now check that the item was actually NOT saved
-        checkNumEntitiesIs(Contact::class.java, 0)
+        checkNumEntitiesIs(ContactPerson::class.java, 0)
     }
 
 
@@ -177,39 +176,33 @@ class ContactCrud : AndroidTestCase() {
 
 
     /**
-     * Creates a dummy Contact.
+     * Creates a dummy ContactPerson.
      */
-    private fun createContact(id: String, name: String, reference: String, email: String, mobile: String): Contact {
+    private fun createContactPerson(id: String, name: String, email: String, mobile: String): ContactPerson {
         val mainAddress = Address.create(null, "street1 main", "street2 main", "town", "county", "postCode", AddressType.Companion.V3.DELIVERY)
-        val deliveryAddress = Address.create(null, "street1 dely", "street2 dely", "town", "county", "postCode", AddressType.Companion.V3.DELIVERY)
         val contactPersonTypes = ContactPersonType.createList(CONTACT_PERSON_TYPES)
-        val mainContactPerson = ContactPerson.create(null, contactPersonTypes, name, "job", "telephone", mobile, email, "fax", address = mainAddress)
-        val contactTypes = ContactType.createList(CONTACT_TYPES)
-        return Contact(id, SyncStatus.SYNC_SUCCESS, contactTypes, name, reference, mainAddress, deliveryAddress, mainContactPerson)
+        return ContactPerson.create(id, contactPersonTypes, name, "job", "telephone", mobile, email, "fax", address = mainAddress)
     }
 
     /**
-     * This Contact can be fixed because it lacks some dependency details.
+     * This ContactPerson can be fixed because it lacks some dependency details.
      */
-    private fun createInvalidContact(id: String): Contact {
+    private fun createInvalidContactPerson(id: String): ContactPerson {
         // It will be invalid cos the AddressType has no symbol.
         // It should be fixable since AddressType is annotated as SupportsIdOnly
         val invalidAddressType = AddressType(invalidId, SyncStatus.SYNC_SUCCESS, invalidId)
         val ireland = Country.create(Country.Companion.Code.IE)
         val invalidAddress = Address(id, SyncStatus.SYNC_SUCCESS, "street1", "street2", "town", "county", "postCode", ireland, invalidAddressType)
-        val deliveryAddress = Address.create(null, "street1 dely", "street2 dely", "town", "county", "postCode", AddressType.Companion.V3.DELIVERY)
         val contactPersonTypes = ContactPersonType.createList(CONTACT_PERSON_TYPES)
-        val mainContactPerson = ContactPerson.create(null, contactPersonTypes, name, "job", "telephone", "mobile", "email", "fax", address = invalidAddress)
-        val contactTypes = ContactType.createList(CONTACT_TYPES)
-        return Contact(id, SyncStatus.SYNC_SUCCESS, contactTypes, name, "reference", invalidAddress, deliveryAddress, mainContactPerson)
+        return ContactPerson.create(id, contactPersonTypes, "name", "job", "telephone", "mobile", "email", "fax", address = invalidAddress)
     }
 
     /**
-     * This Contact can not be fixed because the name is missing!
+     * This ContactPerson can not be fixed because the name is missing!
      * 'name' is a mandatory field.
      */
-    fun createInvalidContactNotFixable(id: String): Contact {
-        return createContact(CONTACT_ID, "", "John's ref", "john@gmail.com", "123123123")
+    fun createInvalidContactPersonNotFixable(id: String): ContactPerson {
+        return createContactPerson(id, "", "john@gmail.com", "123123123")
     }
 
     //endregion

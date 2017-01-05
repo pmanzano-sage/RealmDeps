@@ -30,7 +30,6 @@ class AccountTypeCrud : AndroidTestCase() {
     /**
      * Start with a fresh db.
      */
-    @Throws(Exception::class)
     override fun setUp() {
         super.setUp()
 
@@ -44,8 +43,6 @@ class AccountTypeCrud : AndroidTestCase() {
         dataManager.deleteAll()
     }
 
-
-    @Throws(Exception::class)
     override fun tearDown() {
         super.tearDown()
     }
@@ -61,7 +58,6 @@ class AccountTypeCrud : AndroidTestCase() {
     /**
      * UPDATE
      */
-    @Throws(Exception::class)
     fun testUpdate() {
         dataManager.save(item)
 
@@ -86,7 +82,6 @@ class AccountTypeCrud : AndroidTestCase() {
     /**
      * DELETE
      */
-    @Throws(Exception::class)
     fun testDeleteContact() {
         dataManager.save(item)
         dataManager.delete(item)

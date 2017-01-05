@@ -16,8 +16,6 @@ import junit.framework.Assert
 
 /**
  * @author Pablo Manzano
- *
- * @since 14/12/16
  */
 class AccountCrud : AndroidTestCase() {
 

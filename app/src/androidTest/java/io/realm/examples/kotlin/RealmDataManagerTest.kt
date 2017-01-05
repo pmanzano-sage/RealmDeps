@@ -153,7 +153,7 @@ class RealmDataManagerTest : AndroidTestCase() {
         val mainAddress = Address.create(null, "street1 main", "street2 main", "town", "county", "postCode", AddressType.Companion.V3.DELIVERY)
         // We explicitly create an partially filled-in entity for testing purposes
         val contactPersonTypes = arrayListOf(ContactPersonType("CONTRACTOR"))
-        return ContactPerson.create(contactPersonTypes, name, "job", "telephone", mobile, email, "fax", address = mainAddress)
+        return ContactPerson.create(null, contactPersonTypes, name, "job", "telephone", mobile, email, "fax", address = mainAddress)
     }
 
 

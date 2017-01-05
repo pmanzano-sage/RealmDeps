@@ -14,8 +14,6 @@ import java.util.*
 
 /**
  * @author Pablo Manzano
- *
- * @since 14/12/16
  */
 class SalesInvoiceCrud : AndroidTestCase() {
 
@@ -255,7 +253,7 @@ class SalesInvoiceCrud : AndroidTestCase() {
         val mainAddress = Address.create(null, "street1 main", "street2 main", "town", "county", "postCode", AddressType.Companion.V3.DELIVERY)
         val deliveryAddress = Address.create(null, "street1 dely", "street2 dely", "town", "county", "postCode", AddressType.Companion.V3.DELIVERY)
         val contactPersonTypes = ContactPersonType.createList(CONTACT_PERSON_TYPES)
-        val mainContactPerson = ContactPerson.create(contactPersonTypes, name, "job", "telephone", mobile, email, "fax", address = mainAddress)
+        val mainContactPerson = ContactPerson.create(null, contactPersonTypes, name, "job", "telephone", mobile, email, "fax", address = mainAddress)
         val contactTypes = ContactType.createList(CONTACT_TYPES)
         return Contact.create(contactTypes, name, reference, mainAddress, deliveryAddress, mainContactPerson)
     }

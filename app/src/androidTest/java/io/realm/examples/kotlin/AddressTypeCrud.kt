@@ -30,7 +30,6 @@ class AddressTypeCrud : AndroidTestCase() {
     /**
      * Start with a fresh db.
      */
-    @Throws(Exception::class)
     override fun setUp() {
         super.setUp()
 
@@ -45,7 +44,6 @@ class AddressTypeCrud : AndroidTestCase() {
     }
 
 
-    @Throws(Exception::class)
     override fun tearDown() {
         super.tearDown()
     }
@@ -61,7 +59,6 @@ class AddressTypeCrud : AndroidTestCase() {
     /**
      * UPDATE
      */
-    @Throws(Exception::class)
     fun testUpdate() {
         dataManager.save(item)
 
@@ -86,7 +83,6 @@ class AddressTypeCrud : AndroidTestCase() {
     /**
      * DELETE
      */
-    @Throws(Exception::class)
     fun testDeleteContact() {
         dataManager.save(item)
         dataManager.delete(item)

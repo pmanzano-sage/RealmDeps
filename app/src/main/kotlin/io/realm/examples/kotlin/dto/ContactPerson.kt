@@ -48,8 +48,9 @@ data class ContactPerson(
 
     // Convenient factory methods
     companion object {
-        fun create(types: List<ContactPersonType>, name: String, jobTitle: String, telephone: String, mobile: String, email: String, fax: String, address: Address?): ContactPerson {
-            return ContactPerson(generateId(), SyncStatus.getDefault(), types, name, jobTitle, telephone, mobile, email, fax, true, address)
+        fun create(id: String?, types: List<ContactPersonType>, name: String, jobTitle: String, telephone: String, mobile: String, email: String, fax: String, address: Address?): ContactPerson {
+            val (finalId, status) = Dto.init(id)
+            return ContactPerson(finalId, status, types, name, jobTitle, telephone, mobile, email, fax, true, address)
         }
     }
 

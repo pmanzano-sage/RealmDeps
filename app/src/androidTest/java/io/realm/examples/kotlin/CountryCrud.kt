@@ -1,39 +1,34 @@
 package io.realm.examples.kotlin
 
 import android.test.AndroidTestCase
-import android.util.Log
 import io.realm.Realm
 import io.realm.RealmConfiguration
 import io.realm.examples.kotlin.data.DataManager
 import io.realm.examples.kotlin.data.Dto
 import io.realm.examples.kotlin.data.RealmDataManager
-import io.realm.examples.kotlin.dto.Address
-import io.realm.examples.kotlin.dto.AddressType
 import io.realm.examples.kotlin.dto.Country
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import junit.framework.Assert
 
 /**
  * @author Pablo Manzano
+ *
+ * This entity is basic and has no dependencies.
  */
-class AddressCrud : AndroidTestCase() {
+class CountryCrud : AndroidTestCase() {
 
     private lateinit var dataManager: DataManager
 
-    private val enumItem = AddressType.Companion.V3.DELIVERY
-    private val id = "ADR1"
-    private var item = Address.create(id, "street1", "street2", "town", "county", "postCode", enumItem)
-
-    private val street1Updated = "street1 updated"
-    private val street2Updated = "street2 updated"
-
-    private val dep1Id = "XYZ"
-    private val dep2Id = "US"
+    // Item used for the test
+    private val enumItem = Country.Companion.Code.US
+    private val id = enumItem.name
+    private val updatedName = "updated name"
+    private val updatedCode = "IE"
+    private val item = Country.create(enumItem)
 
     /**
      * Start with a fresh db.
      */
-    @Throws(Exception::class)
     override fun setUp() {
         super.setUp()
 
@@ -48,7 +43,6 @@ class AddressCrud : AndroidTestCase() {
     }
 
 
-    @Throws(Exception::class)
     override fun tearDown() {
         super.tearDown()
     }
@@ -56,9 +50,9 @@ class AddressCrud : AndroidTestCase() {
     /**
      * SAVE
      */
-    fun testSaveContact() {
+    fun testSave() {
         dataManager.save(item)
-        checkNumEntitiesIs(Address::class.java, 1)
+        checkNumEntitiesIs(Country::class.java, 1)
     }
 
     /**
@@ -67,71 +61,67 @@ class AddressCrud : AndroidTestCase() {
     fun testUpdate() {
         dataManager.save(item)
 
-        val updated = Address.create(id, street1Updated, street2Updated, "town", "county", "postCode", enumItem)
+        // These entities have the name fixed, so we can not do this:
+        // item.name = updatedName
+        // So we create a new entity with the same id and different name & symbol
+        val updated = Country(id, SyncStatus.SYNC_SUCCESS, updatedCode, updatedName)
         dataManager.update(updated)
 
         // Now check that the item was actually modified
-        val fromDb = dataManager.find(Address::class.java, id) as Address
+        val fromDb = dataManager.find(Country::class.java, id) as Country
         Assert.assertNotNull(fromDb)
         Assert.assertEquals(fromDb.id, id)
-        Assert.assertEquals(fromDb.streetOne, street1Updated)
-        Assert.assertEquals(fromDb.streetTwo, street2Updated)
+        Assert.assertEquals(fromDb.name, updatedName)
+        Assert.assertEquals(fromDb.code, updatedCode)
 
         // Also check no new entities have been created
-        checkNumEntitiesIs(Address::class.java, 1)
+        checkNumEntitiesIs(Country::class.java, 1)
     }
 
 
     /**
      * DELETE
      */
-    fun testDelete() {
+    fun testDeleteContact() {
         dataManager.save(item)
         dataManager.delete(item)
-        checkNumEntitiesIs(Address::class.java, 0)
+        checkNumEntitiesIs(Country::class.java, 0)
     }
-
 
     /**
      * VALIDATION
      */
     fun testValidation() {
-        // Create invalid dependencies to fill parent entity
-        val invalidEntity = createInvalidAddress(id)
+        val invalidItem = createInvalidCountry(updatedCode)
         try {
-            dataManager.save(invalidEntity)
+            dataManager.save(invalidItem)
             Assert.fail("Should have thrown a validation exception")
         } catch(e: Exception) {
         }
     }
 
-
     /**
      * DEPENDENCY LOOKUP
      */
     fun testDependencyLookup() {
+        // Insert an item into the db
+        val existingItem = Country(updatedCode, SyncStatus.SYNC_SUCCESS, updatedCode, updatedCode)
+        dataManager.save(existingItem)
 
-        // Insert valid dependencies into the db
-        val existingItem1 = AddressType(dep1Id, SyncStatus.SYNC_SUCCESS, dep1Id, dep1Id)
-        dataManager.save(existingItem1)
-        val existingItem2 = Country(dep2Id, SyncStatus.SYNC_SUCCESS, dep2Id, dep2Id)
-        dataManager.save(existingItem2)
-
-        // Create an invalid entity
-        val invalidEntity = createInvalidAddress(id)
-
+        val invalidItem = createInvalidCountry(updatedCode)
         try {
-            dataManager.save(invalidEntity, false)
+            dataManager.save(invalidItem, false)
         } catch(e: Exception) {
-            Log.e("ugh", "$e")
             Assert.fail("Missing info should have been searched from the db")
         }
 
         // Now check that the item was actually modified
-        val fromDb = dataManager.find(Address::class.java, id) as Address
+        val fromDb = dataManager.find(Country::class.java, updatedCode) as Country
         Assert.assertNotNull(fromDb)
-        Assert.assertEquals(existingItem1, fromDb.addressType)
-        Assert.assertEquals(existingItem2, fromDb.country)
+        Assert.assertEquals(fromDb.id, updatedCode)
+        Assert.assertEquals(fromDb.name, updatedCode)
+        Assert.assertEquals(fromDb.code, updatedCode)
+
     }
 
     //region Auxiliary functions
@@ -140,12 +130,9 @@ class AddressCrud : AndroidTestCase() {
         Assert.assertEquals(numEntities, dataManager.count(clazz))
     }
 
-    private fun createInvalidAddress(id: String): Address {
-        val invalidItem1 = AddressType(dep1Id)
-        val invalidItem2 = Country(dep2Id)
-        return Address(id, SyncStatus.SYNC_SUCCESS, street1Updated, street2Updated, "town", "county", "postCode", invalidItem2, invalidItem1)
+    private fun createInvalidCountry(id: String): Country {
+        return Country(id)
     }
-
 
     //endregion
 
