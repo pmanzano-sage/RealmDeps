@@ -9,6 +9,8 @@ import java.util.*
 
 /**
  * Common Contact Type model
+ *
+ * BASIC ENTITY (no dependencies)
  */
 data class ContactType(
         override val id: String = generateId(),

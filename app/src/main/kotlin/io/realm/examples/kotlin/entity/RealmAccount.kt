@@ -4,9 +4,7 @@ import android.util.Log
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
-import io.realm.examples.kotlin.data.DbModel
-import io.realm.examples.kotlin.data.RealmDbModel
-import io.realm.examples.kotlin.data.generateId
+import io.realm.examples.kotlin.data.*
 import io.realm.examples.kotlin.dto.Account
 import io.realm.examples.kotlin.dto.Amount
 import io.realm.examples.kotlin.dto.definition.SyncStatus
@@ -51,9 +49,13 @@ open class RealmAccount(
 
     override fun checkValid(): DbModel {
         if (displayName.isBlank()) {
-            throw IllegalArgumentException("RealmAccount displayName can not be blank!\nOffending instance:\n${this}")
+            throw InvalidFieldException("RealmAccount displayName can not be blank!\nOffending instance:\n${this}")
         }
-        accountType!!.checkValid()
+        try {
+            accountType!!.checkValid()
+        } catch (e: InvalidFieldException) {
+            throw InvalidDependencyException("RealmAccount has invalid dependencies", e)
+        }
         return this
     }
 

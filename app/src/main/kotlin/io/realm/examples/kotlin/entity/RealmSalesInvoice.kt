@@ -43,11 +43,17 @@ open class RealmSalesInvoice(
     }
 
     override fun checkValid(): DbModel {
+        // basic fields
         if (displayAs.isBlank()) {
-            throw IllegalArgumentException("RealmSalesInvoice displayAs can not be blank!\nOffending instance:\n${this}")
+            throw InvalidFieldException("RealmSalesInvoice displayAs can not be blank!\nOffending instance:\n${this}")
         }
-        invoiceLines?.map { it.checkValid() }
-        payments?.map { it.checkValid() }
+        // dependencies
+        try {
+            invoiceLines?.map { it.checkValid() }
+            payments?.map { it.checkValid() }
+        } catch (e: InvalidFieldException) {
+            throw InvalidDependencyException("RealmSalesInvoice has invalid dependencies", e)
+        }
 
         return this
     }

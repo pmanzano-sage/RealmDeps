@@ -31,7 +31,7 @@ open class RealmInvoiceLine(
 
     override fun checkValid(): DbModel {
         if (displayAs.isBlank()) {
-            throw IllegalArgumentException("RealmInvoiceLine displayAs can not be blank!\nOffending instance:\n${this}")
+            throw InvalidFieldException("RealmInvoiceLine displayAs can not be blank!\nOffending instance:\n${this}")
         }
         return this
 

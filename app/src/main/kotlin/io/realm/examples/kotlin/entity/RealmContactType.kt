@@ -26,7 +26,7 @@ open class RealmContactType(
 
     override fun checkValid(): DbModel {
         if (name.isBlank()) {
-            throw IllegalArgumentException("RealmContactType name can not be blank!\nOffending instance:\n${this}")
+            throw InvalidFieldException("RealmContactType name can not be blank!\nOffending instance:\n${this}")
         }
         return this
     }

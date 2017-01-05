@@ -3,10 +3,7 @@ package io.realm.examples.kotlin.entity
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
-import io.realm.examples.kotlin.data.DbModel
-import io.realm.examples.kotlin.data.RealmDbModel
-import io.realm.examples.kotlin.data.convertToDto
-import io.realm.examples.kotlin.data.generateId
+import io.realm.examples.kotlin.data.*
 import io.realm.examples.kotlin.dto.Transaction
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import java.util.*
@@ -39,16 +36,21 @@ open class RealmTransaction(
     }
 
     override fun checkValid(): DbModel {
-        if (title!!.isBlank()) {
-            throw IllegalArgumentException("RealmTransaction title can not be blank!\nOffending instance:\n${this}")
+        if (title.isBlank()) {
+            throw InvalidFieldException("RealmTransaction title can not be blank!\nOffending instance:\n${this}")
         }
-        // TODO Amount is not checked yet
-        accountSource?.checkValid()
-        accountDest?.checkValid()
-        category?.checkValid()
-        attachment?.checkValid()
-        contact?.checkValid()
-        taxRate?.checkValid()
+        try {
+            // TODO Amount is not checked yet
+            accountSource?.checkValid()
+            accountDest?.checkValid()
+            category?.checkValid()
+            attachment?.checkValid()
+            contact?.checkValid()
+            taxRate?.checkValid()
+        } catch (e: InvalidFieldException) {
+            throw InvalidDependencyException("RealmTransaction has invalid dependencies", e)
+        }
+
         return this
     }
 

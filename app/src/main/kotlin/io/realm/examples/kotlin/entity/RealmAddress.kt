@@ -3,10 +3,7 @@ package io.realm.examples.kotlin.entity
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
-import io.realm.examples.kotlin.data.DbModel
-import io.realm.examples.kotlin.data.RealmDbModel
-import io.realm.examples.kotlin.data.convertToDto
-import io.realm.examples.kotlin.data.generateId
+import io.realm.examples.kotlin.data.*
 import io.realm.examples.kotlin.dto.Address
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import java.util.*
@@ -24,7 +21,7 @@ open class RealmAddress(
         open var county: String? = null,
         open var postCode: String? = null,
         open var country: RealmCountry? = null,
-        var addressType: RealmAddressType? = null
+        open var addressType: RealmAddressType? = null
 ) : RealmDbModel {
 
     override fun toDto(): Address {
@@ -32,8 +29,12 @@ open class RealmAddress(
     }
 
     override fun checkValid(): DbModel {
-        country?.checkValid()
-        addressType?.checkValid()
+        try {
+            country?.checkValid()
+            addressType?.checkValid()
+        } catch (e: InvalidFieldException) {
+            throw InvalidDependencyException("RealmAddress has invalid dependencies", e)
+        }
         return this
     }
 

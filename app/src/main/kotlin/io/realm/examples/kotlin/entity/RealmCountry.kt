@@ -28,10 +28,10 @@ open class RealmCountry(
         try {
             Country.Companion.Code.valueOf(code)
         } catch (e: IllegalArgumentException) {
-            throw IllegalArgumentException("Unsupported country used! \nOffending instance:\n${this}")
+            throw InvalidFieldException("Unsupported country used! \nOffending instance:\n${this}")
         }
         if (name.isBlank()) {
-            throw IllegalArgumentException("RealmCountry name can not be blank!\nOffending instance:\n${this}")
+            throw InvalidFieldException("RealmCountry name can not be blank!\nOffending instance:\n${this}")
         }
         return this
     }

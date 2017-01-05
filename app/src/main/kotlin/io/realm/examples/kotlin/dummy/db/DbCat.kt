@@ -19,10 +19,7 @@ package io.realm.examples.kotlin.dummy.db
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
-import io.realm.examples.kotlin.data.CascadeOnDelete
-import io.realm.examples.kotlin.data.RealmDbModel
-import io.realm.examples.kotlin.data.convertToDto
-import io.realm.examples.kotlin.data.generateId
+import io.realm.examples.kotlin.data.*
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.dummy.model.Cat
 
@@ -51,9 +48,13 @@ open class DbCat(
 
     override fun checkValid(): DbCat {
         if (name.isBlank()) {
-            throw IllegalArgumentException("DbCat name can not be blank!\nOffending instance:\n${this}")
+            throw InvalidFieldException("DbCat name can not be blank!\nOffending instance:\n${this}")
         }
-        toy!!.checkValid()
+        try {
+            toy?.checkValid()
+        } catch (e: InvalidFieldException) {
+            throw InvalidDependencyException("DbCat has invalid dependencies", e)
+        }
         return this
     }
 

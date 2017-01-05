@@ -3,10 +3,7 @@ package io.realm.examples.kotlin.entity
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
-import io.realm.examples.kotlin.data.DbModel
-import io.realm.examples.kotlin.data.RealmDbModel
-import io.realm.examples.kotlin.data.convertToDto
-import io.realm.examples.kotlin.data.generateId
+import io.realm.examples.kotlin.data.*
 import io.realm.examples.kotlin.dto.Attachment
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import java.util.*
@@ -37,11 +34,12 @@ open class RealmAttachment(
     }
 
     override fun checkValid(): DbModel {
+        // basic fields
         if (contextId.isBlank()) {
-            throw IllegalArgumentException("RealmAttachment contextId can not be blank!\nOffending instance:\n${this}")
+            throw InvalidFieldException("RealmAttachment contextId can not be blank!\nOffending instance:\n${this}")
         }
         if (contextType.isBlank()) {
-            throw IllegalArgumentException("RealmAddressType contextType can not be blank!\nOffending instance:\n${this}")
+            throw InvalidFieldException("RealmAddressType contextType can not be blank!\nOffending instance:\n${this}")
         }
         return this
     }

@@ -76,10 +76,16 @@ open class DbPerson(
 
     override fun checkValid(): DbModel {
         if (name.isBlank()) {
-            throw IllegalArgumentException("DbPerson name can not be blank!\nOffending instance:\n${this}")
+            throw InvalidFieldException("DbPerson name can not be blank!\nOffending instance:\n${this}")
         }
-        toy!!.checkValid()
-        cats.map(DbCat::checkValid)
+
+        try {
+            toy?.checkValid()
+            cats.map(DbCat::checkValid)
+
+        } catch (e: InvalidFieldException) {
+            throw InvalidDependencyException("DbPerson has invalid dependencies", e)
+        }
         return this
     }
 

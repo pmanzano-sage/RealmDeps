@@ -1,6 +1,7 @@
 package io.realm.examples.kotlin.dto
 
 import io.realm.examples.kotlin.data.Dto
+import io.realm.examples.kotlin.data.Dto.Companion.init
 import io.realm.examples.kotlin.data.convertToDb
 import io.realm.examples.kotlin.data.generateId
 import io.realm.examples.kotlin.dto.definition.SyncStatus
@@ -45,7 +46,7 @@ data class Address(
 
         /**
          * Example of usage:
-         * Address.create( "street1", "street2", "town", "county", "postCode", AddressType.Companion.V3.DELIVERY )
+         * Address.create( id, "street1", "street2", "town", "county", "postCode", AddressType.Companion.V3.DELIVERY )
          */
         fun create(
                 id: String? = null,
@@ -59,15 +60,7 @@ data class Address(
             val addressType = AddressType.create(type)
             val country = Country.create(countryCode)
 
-            val finalId: String
-            val status: SyncStatus
-            if (id.isNullOrBlank()) {
-                finalId = generateId()
-                status = SyncStatus.getDefaultLocal()
-            } else {
-                finalId = id!!
-                status = SyncStatus.getDefault()
-            }
+            val (finalId, status) = init(id)
 
             return Address(
                     finalId,

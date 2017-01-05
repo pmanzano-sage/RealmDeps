@@ -1,13 +1,15 @@
 package io.realm.examples.kotlin.dto
 
-import io.realm.examples.kotlin.dto.definition.SyncStatus
-import io.realm.examples.kotlin.entity.RealmTransactionType
 import io.realm.examples.kotlin.data.Dto
 import io.realm.examples.kotlin.data.convertToDb
 import io.realm.examples.kotlin.data.generateId
+import io.realm.examples.kotlin.dto.definition.SyncStatus
+import io.realm.examples.kotlin.entity.RealmTransactionType
 
 /**
- * Created by neil.wilkinson on 12/07/2016.
+ * Transaction Type model.
+ *
+ * BASIC ENTITY (no dependencies)
  *
  * Ordinal values:
  * 0 = INCOME

@@ -1,13 +1,15 @@
 package io.realm.examples.kotlin.dto
 
-import io.realm.examples.kotlin.dto.definition.SyncStatus
-import io.realm.examples.kotlin.entity.RealmTransactionCategory
 import io.realm.examples.kotlin.data.Dto
 import io.realm.examples.kotlin.data.convertToDb
 import io.realm.examples.kotlin.data.generateId
+import io.realm.examples.kotlin.dto.definition.SyncStatus
+import io.realm.examples.kotlin.entity.RealmTransactionCategory
 
 /**
- * Common Transaction Category model
+ * Common Transaction Category model.
+ *
+ * BASIC ENTITY (no dependencies)
  */
 data class TransactionCategory(
         override val id: String = generateId(),

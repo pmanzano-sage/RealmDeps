@@ -35,13 +35,19 @@ open class RealmContact(
     }
 
     override fun checkValid(): DbModel {
-        if (name!!.isBlank()) {
-            throw IllegalArgumentException("RealmContact name can not be blank!\nOffending instance:\n${this}")
+        // basic fields
+        if (name.isBlank()) {
+            throw InvalidFieldException("RealmContact name can not be blank!\nOffending instance:\n${this}")
         }
-        mainAddress?.checkValid()
-        deliveryAddress?.checkValid()
-        contactTypes?.map { it.checkValid() }
-        mainContactPerson?.checkValid()
+        // dependencies
+        try {
+            mainAddress?.checkValid()
+            deliveryAddress?.checkValid()
+            contactTypes?.map { it.checkValid() }
+            mainContactPerson?.checkValid()
+        } catch (e: InvalidFieldException) {
+            throw InvalidDependencyException("RealmContact has invalid dependencies", e)
+        }
         return this
 
     }

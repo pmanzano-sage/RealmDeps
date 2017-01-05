@@ -26,10 +26,10 @@ open class RealmAddressType(
 
     override fun checkValid(): DbModel {
         if (name.isBlank()) {
-            throw IllegalArgumentException("RealmAddressType name can not be blank!\nOffending instance:\n${this}")
+            throw InvalidFieldException("RealmAddressType name can not be blank!\nOffending instance:\n${this}")
         }
         if (symbol.isBlank()) {
-            throw IllegalArgumentException("RealmAddressType symbol can not be blank!\nOffending instance:\n${this}")
+            throw InvalidFieldException("RealmAddressType symbol can not be blank!\nOffending instance:\n${this}")
         }
         return this
     }

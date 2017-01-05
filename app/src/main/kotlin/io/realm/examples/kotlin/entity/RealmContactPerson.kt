@@ -4,10 +4,7 @@ import io.realm.RealmList
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
-import io.realm.examples.kotlin.data.DbModel
-import io.realm.examples.kotlin.data.RealmDbModel
-import io.realm.examples.kotlin.data.convertToDto
-import io.realm.examples.kotlin.data.generateId
+import io.realm.examples.kotlin.data.*
 import io.realm.examples.kotlin.dto.ContactPerson
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import java.util.*
@@ -36,10 +33,14 @@ open class RealmContactPerson(
 
     override fun checkValid(): DbModel {
         if (name.isBlank()) {
-            throw IllegalArgumentException("RealmContactPerson name can not be blank!\nOffending instance:\n${this}")
+            throw InvalidFieldException("RealmContactPerson name can not be blank!\nOffending instance:\n${this}")
         }
-        contactPersonTypes?.map { it.checkValid() }
-        address?.checkValid()
+        try {
+            contactPersonTypes?.map { it.checkValid() }
+            address?.checkValid()
+        } catch (e: InvalidFieldException) {
+            throw InvalidDependencyException("RealmContactPerson has invalid dependencies", e)
+        }
         return this
     }
 

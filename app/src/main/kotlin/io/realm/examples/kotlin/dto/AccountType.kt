@@ -1,14 +1,16 @@
 package io.realm.examples.kotlin.dto
 
-import io.realm.examples.kotlin.dto.definition.SyncStatus
-import io.realm.examples.kotlin.entity.RealmAccountType
 import io.realm.examples.kotlin.data.Dto
 import io.realm.examples.kotlin.data.convertToDb
 import io.realm.examples.kotlin.data.generateId
+import io.realm.examples.kotlin.dto.definition.SyncStatus
+import io.realm.examples.kotlin.entity.RealmAccountType
 
 /**
  * Common Account Type model.
  * All parameters must have default values since a no argument constructor is required.
+ *
+ * BASIC ENTITY (no dependencies)
  */
 data class AccountType(
         override val id: String = generateId(),

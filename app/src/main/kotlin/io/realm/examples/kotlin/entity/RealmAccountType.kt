@@ -26,10 +26,10 @@ open class RealmAccountType(
 
     override fun checkValid(): DbModel {
         if (name.isBlank()) {
-            throw IllegalArgumentException("RealmAccountType name can not be blank!\nOffending instance:\n${this}")
+            throw InvalidFieldException("RealmAccountType name can not be blank!\nOffending instance:\n${this}")
         }
         if (symbol.isBlank()) {
-            throw IllegalArgumentException("RealmAccountType symbol can not be blank!\nOffending instance:\n${this}")
+            throw InvalidFieldException("RealmAccountType symbol can not be blank!\nOffending instance:\n${this}")
         }
         return this
 
@@ -38,6 +38,5 @@ open class RealmAccountType(
     override fun getDtoClass(): Class<out AccountType> {
         return AccountType::class.java
     }
-
 
 }

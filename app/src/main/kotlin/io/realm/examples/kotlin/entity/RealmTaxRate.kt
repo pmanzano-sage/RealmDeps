@@ -4,10 +4,7 @@ import io.realm.RealmList
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
-import io.realm.examples.kotlin.data.DbModel
-import io.realm.examples.kotlin.data.RealmDbModel
-import io.realm.examples.kotlin.data.convertToDto
-import io.realm.examples.kotlin.data.generateId
+import io.realm.examples.kotlin.data.*
 import io.realm.examples.kotlin.dto.TaxRate
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import java.util.*
@@ -34,11 +31,14 @@ open class RealmTaxRate(
 
     override fun checkValid(): DbModel {
         if (name.isBlank()) {
-            throw IllegalArgumentException("RealmTaxRate name can not be blank!\nOffending instance:\n${this}")
+            throw InvalidFieldException("RealmTaxRate name can not be blank!\nOffending instance:\n${this}")
         }
-        subTaxRates?.map { it.checkValid() }
+        try {
+            subTaxRates?.map { it.checkValid() }
+        } catch (e: InvalidFieldException) {
+            throw InvalidDependencyException("RealmTaxRate has invalid dependencies", e)
+        }
         return this
-
     }
 
     override fun getDtoClass(): Class<out TaxRate> {

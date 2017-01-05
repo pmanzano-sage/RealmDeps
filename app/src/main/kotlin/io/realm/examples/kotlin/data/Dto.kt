@@ -19,4 +19,26 @@ interface Dto {
     fun toDbModel(): RealmDbModel
     fun checkValid(): Dto
     fun getDbClass(): Class<out RealmDbModel>
+
+
+    /**
+     * Example of usage:
+     * val (ident,status) = initialize(id)
+     *
+     * NOTE: We do not set directly id member cos we want to keep it immutable.
+     */
+    companion object {
+        fun init(id: String?): Pair<String, SyncStatus> {
+            val finalId: String
+            val status: SyncStatus
+            if (id.isNullOrBlank()) {
+                finalId = generateId()
+                status = SyncStatus.getDefaultLocal()
+            } else {
+                finalId = id!!
+                status = SyncStatus.getDefault()
+            }
+            return Pair(finalId, status)
+        }
+    }
 }

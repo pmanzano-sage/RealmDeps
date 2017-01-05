@@ -152,6 +152,8 @@ class RealmDataManager(realm: Realm) : DataManager {
         if (validate) {
             dto.checkValid()
         }
+
+        // While mapping do not catch exceptions
         var dbEntity = dto.toDbModel()
 
         try {
@@ -241,6 +243,7 @@ class RealmDataManager(realm: Realm) : DataManager {
     fun <T : RealmDbModel> fillDeps(me: T, fieldName: String = "", level: Int = 0): T {
         val TAG = "fillDeps"
         val TAB = "    "
+        var source = "?"
 
         var result: T
         // Take the object out of Realm, otherwise realm proxy object will show us an empty instance.
@@ -250,21 +253,35 @@ class RealmDataManager(realm: Realm) : DataManager {
             // If no exception is triggered, result will be myself directly
             myself.checkValid()
             result = myself
-        } catch (e: Exception) {
+            source = "original"
+        } catch (e: InvalidDependencyException) {
+            // If the invalid field is a dependency, keep the recursion down.
+            source = "new deps"
+            result = fillDepsForFields(myself, level.inc())
+        } catch (e: InvalidFieldException) {
             // If there is an exception we will try to fill in the gaps
-            Log.w(TAG, "${TAB.repeat(level)} Object '$fieldName':")
+            val who = if (fieldName.isBlank()) myself.javaClass.simpleName else fieldName
+
             val supportsIdOnly = myself.javaClass.isAnnotationPresent(SupportsIdOnly::class.java)
             if (supportsIdOnly) {
+                source = "from db"
                 val fromDb = findDb(myself.javaClass, myself.id)
                 if (fromDb != null) {
+                    Log.w(TAG, "${TAB.repeat(level)} Object '$who': FIXED")
                     result = realm.copyFromRealm(fromDb) as T
                 } else {
-                    throw Exception("${myself.javaClass.simpleName} with id=${myself.id} not found")
+                    Log.w(TAG, "${TAB.repeat(level)} Object '$who' with id=${myself.id} NOT FOUND")
+                    throw NotFoundException("${myself.javaClass.simpleName} with id=${myself.id} not found")
                 }
             } else {
-                result = fillDepsForFields(myself, level.inc())
+                // This entity does NOT support fixing.
+                // The invalid field is a basic data type, so
+                // re-throw the exception and cut the recursion.
+                Log.e(TAG, "${e.message}\nThis entity is invalid and can not be fixed!")
+                throw e
             }
         }
+        Log.w(TAG, "${TAB.repeat(level)} $source = $result")
         return result
     }
 
@@ -297,13 +314,14 @@ class RealmDataManager(realm: Realm) : DataManager {
                     else -> {
                     }
                 }
+            } catch (e: NotFoundException) {
+                throw e
             } catch (e: Exception) {
-                Log.e(TAG, "${e.message}")
+                Log.e(TAG, "${myself.javaClass.simpleName}::${field.name} ${e.message}")
             }
         }
         return myself
     }
-
 
     companion object {
         val TAG = DataManager::class.java.simpleName

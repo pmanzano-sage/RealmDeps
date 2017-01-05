@@ -1,9 +1,10 @@
 package io.realm.examples.kotlin.dto
 
+import io.realm.examples.kotlin.data.Dto
+import io.realm.examples.kotlin.data.Dto.Companion.init
+import io.realm.examples.kotlin.data.generateId
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.entity.RealmAccount
-import io.realm.examples.kotlin.data.Dto
-import io.realm.examples.kotlin.data.generateId
 import java.text.DecimalFormat
 import java.text.NumberFormat
 
@@ -65,16 +66,19 @@ data class Account(
          * Creates an empty account with nominal code in 0.
          * Example of usage:
          *
+         * Account.create(AccountType.Companion.V3.CASH_IN_HAND)
          */
-        fun create(type: AccountType.Companion.V3, countryCode: Country.Companion.Code = Country.Companion.Code.UK): Account {
+        fun create(id: String?, type: AccountType.Companion.V3, countryCode: Country.Companion.Code = Country.Companion.Code.UK): Account {
             val amount = 0.0
             val accountType = AccountType.create(type)
             val balance = when (countryCode) {
+                Country.Companion.Code.UK -> Amount.pounds(amount)
                 Country.Companion.Code.US -> Amount.dollars(amount)
                 Country.Companion.Code.IE -> Amount.euros(amount)
                 else -> Amount.pounds(amount)
             }
-            return Account(generateId(), SyncStatus.getDefault(), accountType.toDisplayString(), "", accountType, 0, balance)
+            val (finalId, status) = init(id)
+            return Account(finalId, status, accountType.toDisplayString(), "", accountType, 0, balance)
         }
     }
 }

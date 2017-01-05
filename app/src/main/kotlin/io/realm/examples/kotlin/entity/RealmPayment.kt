@@ -30,10 +30,10 @@ open class RealmPayment(
 
     override fun checkValid(): DbModel {
         if (reference.isBlank()) {
-            throw IllegalArgumentException("RealmPayment reference can not be blank!\nOffending instance:\n${this}")
+            throw InvalidFieldException("RealmPayment reference can not be blank!\nOffending instance:\n${this}")
         }
         if (!Amount.isCurrencyCodeValid(currencyCode)) {
-            throw IllegalArgumentException("RealmPayment currency code is not supported!\nOffending instance:\n${this}")
+            throw InvalidFieldException("RealmPayment currency code is not supported!\nOffending instance:\n${this}")
         }
         return this
     }

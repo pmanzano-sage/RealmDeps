@@ -41,7 +41,7 @@ class SalesInvoiceCrud : AndroidTestCase() {
     private val DEFAULT_TAX = 0.1
 
     // Some fixed data to create test payments
-    private val DEFAULT_PAY_ACCOUNT = Account.create(AccountType.Companion.V3.CASH_IN_HAND)
+    private val DEFAULT_PAY_ACCOUNT = Account.create(id = null, type = AccountType.Companion.V3.CASH_IN_HAND)
 
     private val PAY1 = "PAY1"
     private val PAY1_AMOUNT = 1.1

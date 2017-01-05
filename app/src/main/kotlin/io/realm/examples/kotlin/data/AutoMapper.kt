@@ -93,6 +93,9 @@ fun <F, T> F.convertToDb(fromClazz: Class<F>, toClazz: Class<T>): T {
             }
         } catch (e: NoSuchMethodException) {
             Log.e(TAG, "Method ${e.message} not found in $toClazz")
+        } catch (e: TypeCastException) {
+            e.printStackTrace()
+            throw e
         }
     }
     return instance
@@ -148,6 +151,9 @@ fun <F, T> F.convertToDto(fromClazz: Class<in F>, toClazz: Class<out T>): T {
             }
         } catch (e: NoSuchFieldException) {
             Log.e(TAG, "${e.message}")
+        } catch (e: TypeCastException) {
+            e.printStackTrace()
+            throw e
         }
     }
 
