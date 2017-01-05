@@ -54,6 +54,7 @@ class BusinessCrud : AndroidTestCase() {
     fun testSave() {
         dataManager.save(item)
         checkNumEntitiesIs(Business::class.java, 1)
+        checkNumEntitiesIs(Address::class.java, 1)
     }
 
     /**
@@ -77,6 +78,7 @@ class BusinessCrud : AndroidTestCase() {
 
         // Also check no new entities have been created
         checkNumEntitiesIs(Business::class.java, 1)
+        checkNumEntitiesIs(Address::class.java, 1)
     }
 
 
@@ -87,6 +89,7 @@ class BusinessCrud : AndroidTestCase() {
         dataManager.save(item)
         dataManager.delete(item)
         checkNumEntitiesIs(Business::class.java, 0)
+        checkNumEntitiesIs(Address::class.java, 0)
     }
 
     /**

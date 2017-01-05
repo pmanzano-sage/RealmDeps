@@ -22,6 +22,8 @@ open class RealmBusiness(
         open var website: String = "",
         open var telephone: String = "",
         open var mobile: String = "",
+
+        @CascadeOnDelete
         open var address: RealmAddress = RealmAddress()
 ) : RealmDbModel {
 
