@@ -1,6 +1,7 @@
 package io.realm.examples.kotlin.dto
 
 import io.realm.examples.kotlin.data.Dto
+import io.realm.examples.kotlin.data.InvalidFieldException
 import io.realm.examples.kotlin.data.RealmDbModel
 import io.realm.examples.kotlin.data.generateId
 import io.realm.examples.kotlin.dto.definition.SyncStatus
@@ -25,7 +26,7 @@ data class Amount(
 
     override fun checkValid(): Dto {
         if (!isCurrencyCodeValid(currencyCode)) {
-            throw IllegalArgumentException("Amount with invalid currency! \nOffending instance:\n${this}")
+            throw InvalidFieldException("Amount with invalid currency! \nOffending instance:\n${this}")
         }
         return this
     }

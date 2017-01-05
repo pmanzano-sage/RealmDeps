@@ -1,6 +1,7 @@
 package io.realm.examples.kotlin.dto
 
 import io.realm.examples.kotlin.data.Dto
+import io.realm.examples.kotlin.data.InvalidFieldException
 import io.realm.examples.kotlin.data.convertToDb
 import io.realm.examples.kotlin.data.generateId
 import io.realm.examples.kotlin.dto.definition.SyncStatus
@@ -26,7 +27,7 @@ data class TransactionCategory(
 
     override fun checkValid(): Dto {
         if (label.isBlank()) {
-            throw IllegalArgumentException("TransactionCategory label can not be blank!\nOffending instance:\n${this}")
+            throw InvalidFieldException("TransactionCategory label can not be blank!\nOffending instance:\n${this}")
         }
         return this
     }

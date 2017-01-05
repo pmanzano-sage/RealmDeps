@@ -1,10 +1,11 @@
 package io.realm.examples.kotlin.dto
 
-import io.realm.examples.kotlin.dto.definition.SyncStatus
-import io.realm.examples.kotlin.entity.RealmPayment
 import io.realm.examples.kotlin.data.Dto
+import io.realm.examples.kotlin.data.InvalidFieldException
 import io.realm.examples.kotlin.data.convertToDb
 import io.realm.examples.kotlin.data.generateId
+import io.realm.examples.kotlin.dto.definition.SyncStatus
+import io.realm.examples.kotlin.entity.RealmPayment
 import java.text.SimpleDateFormat
 
 /**
@@ -29,10 +30,10 @@ data class Payment(
 
     override fun checkValid(): Dto {
         if (reference.isBlank()) {
-            throw IllegalArgumentException("Payment reference can not be blank!\nOffending instance:\n${this}")
+            throw InvalidFieldException("Payment reference can not be blank!\nOffending instance:\n${this}")
         }
         if (!Amount.isCurrencyCodeValid(currencyCode)) {
-            throw IllegalArgumentException("Payment currency code is not supported!\nOffending instance:\n${this}")
+            throw InvalidFieldException("Payment currency code is not supported!\nOffending instance:\n${this}")
         }
         return this
     }

@@ -1,9 +1,7 @@
 package io.realm.examples.kotlin.dto
 
-import io.realm.examples.kotlin.data.Dto
+import io.realm.examples.kotlin.data.*
 import io.realm.examples.kotlin.data.Dto.Companion.init
-import io.realm.examples.kotlin.data.convertToDb
-import io.realm.examples.kotlin.data.generateId
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.entity.RealmAddress
 
@@ -27,8 +25,12 @@ data class Address(
     }
 
     override fun checkValid(): Dto {
-        country?.checkValid()
-        addressType?.checkValid()
+        try {
+            country?.checkValid()
+            addressType?.checkValid()
+        } catch (e: InvalidFieldException) {
+            throw InvalidDependencyException("Address has invalid dependencies", e)
+        }
         return this
     }
 

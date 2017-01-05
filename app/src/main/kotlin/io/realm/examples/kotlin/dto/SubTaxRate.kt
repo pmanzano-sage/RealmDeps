@@ -1,6 +1,7 @@
 package io.realm.examples.kotlin.dto
 
 import io.realm.examples.kotlin.data.Dto
+import io.realm.examples.kotlin.data.InvalidFieldException
 import io.realm.examples.kotlin.data.convertToDb
 import io.realm.examples.kotlin.data.generateId
 import io.realm.examples.kotlin.dto.definition.SyncStatus
@@ -29,7 +30,7 @@ data class SubTaxRate(
 
     override fun checkValid(): Dto {
         if (name.isBlank()) {
-            throw IllegalArgumentException("SubTaxRate name can not be blank!\nOffending instance:\n${this}")
+            throw InvalidFieldException("SubTaxRate name can not be blank!\nOffending instance:\n${this}")
         }
         return this
     }

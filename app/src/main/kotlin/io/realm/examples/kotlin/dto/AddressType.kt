@@ -1,6 +1,7 @@
 package io.realm.examples.kotlin.dto
 
 import io.realm.examples.kotlin.data.Dto
+import io.realm.examples.kotlin.data.InvalidFieldException
 import io.realm.examples.kotlin.data.convertToDb
 import io.realm.examples.kotlin.data.generateId
 import io.realm.examples.kotlin.dto.definition.SyncStatus
@@ -25,10 +26,10 @@ data class AddressType(
 
     override fun checkValid(): Dto {
         if (name.isBlank()) {
-            throw IllegalArgumentException("AddressType name can not be blank!\nOffending instance:\n${this}")
+            throw InvalidFieldException("AddressType name can not be blank!\nOffending instance:\n${this}")
         }
         if (symbol.isBlank()) {
-            throw IllegalArgumentException("AddressType symbol can not be blank!\nOffending instance:\n${this}")
+            throw InvalidFieldException("AddressType symbol can not be blank!\nOffending instance:\n${this}")
         }
         return this
     }

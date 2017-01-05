@@ -147,19 +147,23 @@ class RealmDataManager(realm: Realm) : DataManager {
     }
 
     private fun save(dto: Dto, deleteDeps: Boolean = false, validate: Boolean = false): Boolean {
+        Log.i(TAG, "save ${dto.javaClass.simpleName} deleteDeps=$deleteDeps validate=$validate")
         var success = false
 
-        if (validate) {
-            dto.checkValid()
-        }
+        if (validate) dto.checkValid()
 
         // While mapping do not catch exceptions
         var dbEntity = dto.toDbModel()
 
         try {
             dbEntity.checkValid()
-        } catch (e: Exception) {
-            dbEntity = fillDeps(dbEntity)
+        } catch (ex: Exception) {
+            when (ex) {
+                is InvalidDependencyException, is InvalidFieldException -> {
+                    dbEntity = fillDeps(dbEntity)
+                }
+                else -> throw ex
+            }
         }
 
         // Try to save the entity

@@ -1,8 +1,6 @@
 package io.realm.examples.kotlin.dto
 
-import io.realm.examples.kotlin.data.Dto
-import io.realm.examples.kotlin.data.convertToDb
-import io.realm.examples.kotlin.data.generateId
+import io.realm.examples.kotlin.data.*
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.entity.RealmContact
 
@@ -26,12 +24,17 @@ data class Contact(
 
     override fun checkValid(): Dto {
         if (name!!.isBlank()) {
-            throw IllegalArgumentException("Contact name can not be blank!\nOffending instance:\n${this}")
+            throw InvalidFieldException("Contact name can not be blank!\nOffending instance:\n${this}")
         }
-        mainAddress?.checkValid()
-        deliveryAddress?.checkValid()
-        contactTypes?.map { it.checkValid() }
-        mainContactPerson?.checkValid()
+        try {
+            mainAddress?.checkValid()
+            deliveryAddress?.checkValid()
+            contactTypes?.map { it.checkValid() }
+            mainContactPerson?.checkValid()
+
+        } catch (e: InvalidFieldException) {
+            throw InvalidDependencyException("Contact has invalid dependencies", e)
+        }
         return this
     }
 

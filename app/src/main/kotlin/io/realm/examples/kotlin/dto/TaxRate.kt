@@ -1,10 +1,8 @@
 package io.realm.examples.kotlin.dto
 
+import io.realm.examples.kotlin.data.*
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.entity.RealmTaxRate
-import io.realm.examples.kotlin.data.Dto
-import io.realm.examples.kotlin.data.convertToDb
-import io.realm.examples.kotlin.data.generateId
 
 /**
  * Common Tax Rate model
@@ -27,9 +25,13 @@ data class TaxRate(
 
     override fun checkValid(): Dto {
         if (name.isBlank()) {
-            throw IllegalArgumentException("TaxRate name can not be blank!\nOffending instance:\n${this}")
+            throw InvalidFieldException("TaxRate name can not be blank!\nOffending instance:\n${this}")
         }
-        subTaxRates?.map { it.checkValid() }
+        try {
+            subTaxRates?.map { it.checkValid() }
+        } catch (e: InvalidFieldException) {
+            throw InvalidDependencyException("TaxRate has invalid dependencies", e)
+        }
         return this
     }
 

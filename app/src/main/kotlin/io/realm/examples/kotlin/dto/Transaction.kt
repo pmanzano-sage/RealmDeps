@@ -1,11 +1,9 @@
 package io.realm.examples.kotlin.dto
 
+import io.realm.examples.kotlin.data.*
 import io.realm.examples.kotlin.dto.definition.Constants
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.entity.RealmTransaction
-import io.realm.examples.kotlin.data.Dto
-import io.realm.examples.kotlin.data.convertToDb
-import io.realm.examples.kotlin.data.generateId
 import java.text.SimpleDateFormat
 
 /**
@@ -34,15 +32,19 @@ data class Transaction(
 
     override fun checkValid(): Dto {
         if (title!!.isBlank()) {
-            throw IllegalArgumentException("Transaction title can not be blank!\nOffending instance:\n${this}")
+            throw InvalidFieldException("Transaction title can not be blank!\nOffending instance:\n${this}")
         }
-        amount.checkValid()
-        accountSource?.checkValid()
-        accountDest?.checkValid()
-        category?.checkValid()
-        attachment?.checkValid()
-        contact?.checkValid()
-        taxRate?.checkValid()
+        try {
+            amount.checkValid()
+            accountSource?.checkValid()
+            accountDest?.checkValid()
+            category?.checkValid()
+            attachment?.checkValid()
+            contact?.checkValid()
+            taxRate?.checkValid()
+        } catch (e: InvalidFieldException) {
+            throw InvalidDependencyException("Transaction has invalid dependencies", e)
+        }
         return this
     }
 

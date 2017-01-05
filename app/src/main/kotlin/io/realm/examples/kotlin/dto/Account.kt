@@ -2,6 +2,8 @@ package io.realm.examples.kotlin.dto
 
 import io.realm.examples.kotlin.data.Dto
 import io.realm.examples.kotlin.data.Dto.Companion.init
+import io.realm.examples.kotlin.data.InvalidDependencyException
+import io.realm.examples.kotlin.data.InvalidFieldException
 import io.realm.examples.kotlin.data.generateId
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.entity.RealmAccount
@@ -30,10 +32,14 @@ data class Account(
 
     override fun checkValid(): Dto {
         if (displayName.isBlank()) {
-            throw IllegalArgumentException("Account display name can not be blank!\nOffending instance:\n${this}")
+            throw InvalidFieldException("Account display name can not be blank!\nOffending instance:\n${this}")
         }
-        accountType!!.checkValid()
-        balance.checkValid()
+        try {
+            accountType?.checkValid()
+            balance.checkValid()
+        } catch (e: InvalidFieldException) {
+            throw InvalidDependencyException("Account has invalid dependencies", e)
+        }
         return this
     }
 

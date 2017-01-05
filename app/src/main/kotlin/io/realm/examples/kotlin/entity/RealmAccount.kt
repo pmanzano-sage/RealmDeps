@@ -52,7 +52,7 @@ open class RealmAccount(
             throw InvalidFieldException("RealmAccount displayName can not be blank!\nOffending instance:\n${this}")
         }
         try {
-            accountType!!.checkValid()
+            accountType?.checkValid()
         } catch (e: InvalidFieldException) {
             throw InvalidDependencyException("RealmAccount has invalid dependencies", e)
         }
