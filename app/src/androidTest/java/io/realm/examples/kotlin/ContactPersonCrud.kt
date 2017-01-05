@@ -51,7 +51,7 @@ class ContactPersonCrud : AndroidTestCase() {
         // main entity
         checkNumEntitiesIs(ContactPerson::class.java, 1)
         // dependencies
-        checkNumEntitiesIs(Address::class.java, 2)
+        checkNumEntitiesIs(Address::class.java, 1)
     }
 
     /**
@@ -64,12 +64,12 @@ class ContactPersonCrud : AndroidTestCase() {
         contactUpdated.address?.postCode = UPDATED_POST_CODE
         dataManager.update(contactUpdated, false)
 
-        checkNumEntitiesIs(Contact::class.java, 1)
+        checkNumEntitiesIs(ContactPerson::class.java, 1)
 
         // now check the postal code that we have in the db
-        val john = dataManager.find(ContactPerson::class.java, CONTACT_ID) as Contact
+        val john = dataManager.find(ContactPerson::class.java, CONTACT_ID) as ContactPerson
         Assert.assertNotNull(john)
-        Assert.assertEquals(UPDATED_POST_CODE, john.mainAddress?.postCode)
+        Assert.assertEquals(UPDATED_POST_CODE, john.address?.postCode)
     }
 
 
