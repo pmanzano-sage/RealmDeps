@@ -33,6 +33,14 @@ open class RealmInvoiceLine(
         if (displayAs.isBlank()) {
             throw InvalidFieldException("RealmInvoiceLine displayAs can not be blank!\nOffending instance:\n${this}")
         }
+        if (Math.abs(quantity) < 0.0000001) {
+            throw InvalidFieldException("RealmInvoiceLine quantity can not be zero!\nOffending instance:\n${this}")
+        }
+        try {
+            taxRate?.checkValid()
+        } catch (e: InvalidFieldException) {
+            throw InvalidDependencyException("RealmInvoiceLine has invalid dependencies", e)
+        }
         return this
 
     }

@@ -32,14 +32,13 @@ import kotlin.properties.Delegates
  *   Hacer esto con el SyncStatus.
  * - Pruebas para que salten las exceptions cuando las entities son invalidas.
  * - Implementar la solucion para los partially filled-in entities.
- * - Cuando estamos creando una entidad local, podríamos mirar los @CascadeOnDelete y usar el id
- *   del padre para todas estas dependencias...
  * - Hacer que el DTO de factura permita agregar y quitar pagos/lineas.
  * - Pensar un poco el tema de las 2 bases de datos.
  * - Otra cosa que estaría bien tambien es recibir una lista de campos en los updates.
  * - Add Date & Boolean support.
  *
  * Done
+ * - Boolean type strange behaviour fixed in the automappers.
  * - Implement a "CascadeOnDelete" annotation
  * - Add Instrumentation tests & Junit.
  * - Come up with a solution for cascade deletion.

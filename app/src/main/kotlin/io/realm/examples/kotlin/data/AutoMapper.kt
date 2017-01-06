@@ -9,7 +9,6 @@ import java.util.*
 
 /**
  * @author Pablo Manzano
- * @since 01/12/16
  */
 
 @Target(AnnotationTarget.FIELD)
@@ -61,6 +60,12 @@ fun <F, T> F.convertToDb(fromClazz: Class<F>, toClazz: Class<T>): T {
                 }
                 type == Double::class.java -> {
                     val setMethod = toClazz.getDeclaredMethod(methodName, Double::class.java)
+                    setMethod.invoke(instance, field.get(this))
+                }
+            // Kotlin is doing something strange when dealing with booleans.
+            // Sometimes the type is not unboxed so we have to compare with "java.lang.Boolean"
+                type == Boolean::class.java || type.name == "java.lang.Boolean" -> {
+                    val setMethod = toClazz.getDeclaredMethod(methodName, Boolean::class.java)
                     setMethod.invoke(instance, field.get(this))
                 }
                 type == SyncStatus::class.java -> {
@@ -130,6 +135,7 @@ fun <F, T> F.convertToDto(fromClazz: Class<in F>, toClazz: Class<out T>): T {
                 }
                 type == Long::class.java -> targetField.set(instance, field.get(this))
                 type == Double::class.java -> targetField.set(instance, field.get(this))
+                type == Boolean::class.java -> targetField.set(instance, field.get(this))
                 DbModel::class.java.isAssignableFrom(type) -> {
                     // Get the object from the source field, and convert it to DTO.
                     val dbObject = field.get(this) as? DbModel

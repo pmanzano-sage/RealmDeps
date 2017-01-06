@@ -8,6 +8,7 @@ import io.realm.examples.kotlin.dto.TaxScheme
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 
 @RealmClass
+@SupportsIdOnly
 open class RealmTaxScheme(
         @PrimaryKey @Required override var id: String = generateId(),
         override var sync: Int = SyncStatus.getDefault().ordinal,

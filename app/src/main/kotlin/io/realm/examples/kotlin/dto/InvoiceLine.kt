@@ -1,9 +1,6 @@
 package io.realm.examples.kotlin.dto
 
-import io.realm.examples.kotlin.data.Dto
-import io.realm.examples.kotlin.data.InvalidFieldException
-import io.realm.examples.kotlin.data.convertToDb
-import io.realm.examples.kotlin.data.generateId
+import io.realm.examples.kotlin.data.*
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.entity.RealmInvoiceLine
 
@@ -32,6 +29,15 @@ data class InvoiceLine(
         if (displayAs.isBlank()) {
             throw InvalidFieldException("InvoiceLine displayAs can not be blank!\nOffending instance:\n${this}")
         }
+        if (Math.abs(quantity) < 0.0000001) {
+            throw InvalidFieldException("InvoiceLine quantity can not be zero!\nOffending instance:\n${this}")
+        }
+
+        try {
+            taxRate?.checkValid()
+        } catch (e: InvalidFieldException) {
+            throw InvalidDependencyException("RealmInvoiceLine has invalid dependencies", e)
+        }
         return this
     }
 
@@ -41,6 +47,23 @@ data class InvoiceLine(
 
     override fun toDisplayString(): String {
         return displayAs
+    }
+
+    // Convenient factory methods
+    companion object {
+
+        fun create(id: String, parentId: String, qty: Double, price: Double, description: String, taxRate: TaxRate): InvoiceLine {
+            val taxPercentage = taxRate.percentage.toDouble()
+            val total = qty * price
+            val netPercentage = 1 - taxPercentage
+            val net = total * netPercentage
+            val tax = total * taxPercentage
+
+            val (finalId, status) = Dto.init(id)
+
+            return InvoiceLine(finalId, status, description, qty, price, net, tax, taxRate, total, parentId)
+        }
+
     }
 
 }

@@ -47,10 +47,10 @@ data class TaxRate(
         if (this === other) return true
         if (other !is TaxRate) return false
 
-        if (!id.equals(other.id)) return false
-        if (!symbol.equals(other.symbol)) return false
-        if (!name.equals(other.name)) return false
-        if (!percentage.equals(other.percentage)) return false
+        if (id != other.id) return false
+        if (symbol != other.symbol) return false
+        if (name != other.name) return false
+        if (percentage != other.percentage) return false
 
         return true
     }
@@ -61,6 +61,20 @@ data class TaxRate(
         result = 31 * result + symbol.hashCode()
         result = 31 * result + percentage.hashCode()
         return result
+    }
+
+    // Convenient factory methods
+    companion object {
+
+        /**
+         * Example of usage:
+         * val taxRate = TaxRate.create( id, "NoTax", "0.0", true )
+         */
+        fun create(id: String, name: String, percentage: String, current: Boolean): TaxRate {
+            val (finalId, status) = Dto.init(id)
+            return TaxRate(finalId, status, name, name.toUpperCase(), percentage, current, subTaxRates = null)
+        }
+
     }
 
 }

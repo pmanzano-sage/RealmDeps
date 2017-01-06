@@ -10,6 +10,7 @@ import io.realm.examples.kotlin.dto.definition.SyncStatus
 import java.util.*
 
 @RealmClass
+@SupportsIdOnly
 open class RealmTaxRate(
         @PrimaryKey @Required override var id: String = generateId(),
         override var sync: Int = SyncStatus.getDefault().ordinal,
@@ -19,10 +20,13 @@ open class RealmTaxRate(
         open var percentage: String = "",
         open var name: String = "",
         open var symbol: String = "",
-        open var isCurrent: Boolean = false,
+        open var current: Boolean = false,
         open var editable: Boolean = false,
         open var deletable: Boolean = false,
+
+        @CascadeOnDelete
         open var subTaxRates: RealmList<RealmSubTaxRate>? = null
+
 ) : RealmDbModel {
 
     override fun toDto(): TaxRate {
