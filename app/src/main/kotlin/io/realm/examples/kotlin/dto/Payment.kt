@@ -1,9 +1,6 @@
 package io.realm.examples.kotlin.dto
 
-import io.realm.examples.kotlin.data.Dto
-import io.realm.examples.kotlin.data.InvalidFieldException
-import io.realm.examples.kotlin.data.convertToDb
-import io.realm.examples.kotlin.data.generateId
+import io.realm.examples.kotlin.data.*
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import io.realm.examples.kotlin.entity.RealmPayment
 import java.text.SimpleDateFormat
@@ -35,6 +32,16 @@ data class Payment(
         if (!Amount.isCurrencyCodeValid(currencyCode)) {
             throw InvalidFieldException("Payment currency code is not supported!\nOffending instance:\n${this}")
         }
+        if (Math.abs(amount) < 0.0000001) {
+            throw InvalidFieldException("RealmPayment amount can not be zero!\nOffending instance:\n${this}")
+        }
+
+        try {
+            account?.checkValid()
+        } catch (e: InvalidFieldException) {
+            throw InvalidDependencyException("Payment has invalid dependencies", e)
+        }
+
         return this
     }
 
@@ -48,8 +55,15 @@ data class Payment(
 
     var timestamp: String = ""
 
+    // Convenient factory methods
     companion object {
         @JvmField val dateFormatter = SimpleDateFormat("yyyy-MM-dd")
+
+        fun create(id: String, parentId: String, date: String, amount: Double, currencyCode: String, reference: String, account: Account): Payment {
+            val (finalId, status) = Dto.init(id)
+            return Payment(finalId, status, reference, amount, currencyCode, date, account, parentId)
+        }
+
     }
 }
 

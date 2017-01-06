@@ -35,6 +35,16 @@ open class RealmPayment(
         if (!Amount.isCurrencyCodeValid(currencyCode)) {
             throw InvalidFieldException("RealmPayment currency code is not supported!\nOffending instance:\n${this}")
         }
+        if (Math.abs(amount) < 0.0000001) {
+            throw InvalidFieldException("RealmPayment amount can not be zero!\nOffending instance:\n${this}")
+        }
+
+        try {
+            account?.checkValid()
+        } catch (e: InvalidFieldException) {
+            throw InvalidDependencyException("Payment has invalid dependencies", e)
+        }
+
         return this
     }
 
