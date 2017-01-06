@@ -6,7 +6,6 @@ import io.realm.examples.kotlin.dto.definition.SyncStatus
 
 /**
  * @author Pablo Manzano
- * @since 20/12/16
  */
 interface Dto {
     val id: String
@@ -17,9 +16,11 @@ interface Dto {
     fun isPersistedOnServer() = !StringUtils.isEmpty(id) && !id.startsWith(Constants.FAKE_API_ID_PREFIX)
 
     fun toDbModel(): RealmDbModel
-    fun checkValid(): Dto
-    fun getDbClass(): Class<out RealmDbModel>
 
+    // Returns the instance so as to easily apply this method to collections.
+    fun checkValid(): Dto
+
+    fun getDbClass(): Class<out RealmDbModel>
 
     /**
      * Example of usage:
