@@ -11,13 +11,14 @@ import io.realm.examples.kotlin.entity.RealmTransactionCategory
  * Common Transaction Category model.
  *
  * BASIC ENTITY (no dependencies)
+ * NOTE: In accounting V3, this entity is "ledger_accounts".
  */
 data class TransactionCategory(
         override val id: String = generateId(),
         override var sync: SyncStatus = SyncStatus.getDefault(),
-        val label: String,
-        val moneyIn: Boolean,
-        val nominalCode: Int,
+        val label: String = "",
+        val moneyIn: Boolean = false,
+        val nominalCode: Int = 0,
         val taxCodeId: String = ""
 ) : Dto {
 
@@ -40,4 +41,21 @@ data class TransactionCategory(
     override fun toDisplayString(): String {
         return label
     }
+
+    // Convenient factory methods
+    companion object {
+
+        enum class V3(val label: String, val moneyIn: Boolean, val nominalCode: Int, val taxCodeId: String) {
+            OTHER_RECEIPT("Money in", true, 0, "0"),
+            OTHER_PAYMENT("Money out", false, 0, "0"),
+            BANK_TRANSFER("Bank transfer", false, 0, "0"),
+            DEPOSIT("Deposit", false, 0, "0")
+        }
+
+        fun create(type: V3): TransactionCategory {
+            return TransactionCategory(type.name, SyncStatus.getDefault(), type.label, type.moneyIn, type.nominalCode, type.taxCodeId)
+        }
+
+    }
+
 }

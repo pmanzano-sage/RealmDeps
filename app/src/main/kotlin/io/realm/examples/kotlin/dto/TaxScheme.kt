@@ -15,7 +15,7 @@ import io.realm.examples.kotlin.entity.RealmTaxScheme
 data class TaxScheme(
         override val id: String = generateId(),
         override var sync: SyncStatus = SyncStatus.getDefault(),
-        val name: String
+        val name: String = ""
 ) : Dto {
 
     override fun getDbClass(): Class<out RealmTaxScheme> {
@@ -37,4 +37,19 @@ data class TaxScheme(
     override fun toDisplayString(): String {
         return name
     }
+
+    // Convenient factory methods
+    companion object {
+
+        /**
+         * Example of usage:
+         * val taxScheme = TaxScheme.create( id, "Not registered" )
+         */
+        fun create(id: String, name: String): TaxScheme {
+            val (finalId, status) = Dto.init(id)
+            return TaxScheme(finalId, status, name)
+        }
+
+    }
+
 }
