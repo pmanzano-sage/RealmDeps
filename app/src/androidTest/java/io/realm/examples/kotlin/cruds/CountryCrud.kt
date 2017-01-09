@@ -1,4 +1,4 @@
-package io.realm.examples.kotlin
+package io.realm.examples.kotlin.cruds
 
 import android.test.AndroidTestCase
 import io.realm.Realm
@@ -6,7 +6,7 @@ import io.realm.RealmConfiguration
 import io.realm.examples.kotlin.data.DataManager
 import io.realm.examples.kotlin.data.Dto
 import io.realm.examples.kotlin.data.RealmDataManager
-import io.realm.examples.kotlin.dto.ContactType
+import io.realm.examples.kotlin.dto.Country
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import junit.framework.Assert
 
@@ -15,17 +15,16 @@ import junit.framework.Assert
  *
  * This entity is basic and has no dependencies.
  */
-class ContactTypeCrud : AndroidTestCase() {
+class CountryCrud : AndroidTestCase() {
 
     private lateinit var dataManager: DataManager
 
     // Item used for the test
-    private val enumItem = ContactType.Companion.V3.PURCHASING
+    private val enumItem = Country.Companion.Code.US
     private val id = enumItem.name
     private val updatedName = "updated name"
-    private val updatedSymbol = "updated symbol"
-    private val item = ContactType.create(enumItem)
-    private val invalidItemName = "XYZ"
+    private val updatedCode = "IE"
+    private val item = Country.create(enumItem)
 
     /**
      * Start with a fresh db.
@@ -53,7 +52,7 @@ class ContactTypeCrud : AndroidTestCase() {
      */
     fun testSave() {
         dataManager.save(item)
-        checkNumEntitiesIs(ContactType::class.java, 1)
+        checkNumEntitiesIs(Country::class.java, 1)
     }
 
     /**
@@ -65,18 +64,18 @@ class ContactTypeCrud : AndroidTestCase() {
         // These entities have the name fixed, so we can not do this:
         // item.name = updatedName
         // So we create a new entity with the same id and different name & symbol
-        val updated = ContactType(id, SyncStatus.SYNC_SUCCESS, updatedName, updatedSymbol)
+        val updated = Country(id, SyncStatus.SYNC_SUCCESS, updatedCode, updatedName)
         dataManager.update(updated)
 
         // Now check that the item was actually modified
-        val fromDb = dataManager.find(ContactType::class.java, id) as ContactType
+        val fromDb = dataManager.find(Country::class.java, id) as Country
         Assert.assertNotNull(fromDb)
         Assert.assertEquals(fromDb.id, id)
         Assert.assertEquals(fromDb.name, updatedName)
-        Assert.assertEquals(fromDb.symbol, updatedSymbol)
+        Assert.assertEquals(fromDb.code, updatedCode)
 
         // Also check no new entities have been created
-        checkNumEntitiesIs(ContactType::class.java, 1)
+        checkNumEntitiesIs(Country::class.java, 1)
     }
 
 
@@ -86,14 +85,14 @@ class ContactTypeCrud : AndroidTestCase() {
     fun testDeleteContact() {
         dataManager.save(item)
         dataManager.delete(item)
-        checkNumEntitiesIs(ContactType::class.java, 0)
+        checkNumEntitiesIs(Country::class.java, 0)
     }
 
     /**
      * VALIDATION
      */
     fun testValidation() {
-        val invalidItem = createInvalidEntity(ContactType::class.java, invalidItemName)
+        val invalidItem = createInvalidCountry(updatedCode)
         try {
             dataManager.save(invalidItem)
             Assert.fail("Should have thrown a validation exception")
@@ -106,10 +105,10 @@ class ContactTypeCrud : AndroidTestCase() {
      */
     fun testDependencyLookup() {
         // Insert an item into the db
-        val existingItem = ContactType(invalidItemName, SyncStatus.SYNC_SUCCESS, invalidItemName, invalidItemName)
+        val existingItem = Country(updatedCode, SyncStatus.SYNC_SUCCESS, updatedCode, updatedCode)
         dataManager.save(existingItem)
 
-        val invalidItem = createInvalidEntity(ContactType::class.java, invalidItemName)
+        val invalidItem = createInvalidCountry(updatedCode)
         try {
             dataManager.save(invalidItem, false)
         } catch(e: Exception) {
@@ -117,11 +116,11 @@ class ContactTypeCrud : AndroidTestCase() {
         }
 
         // Now check that the item was actually modified
-        val fromDb = dataManager.find(ContactType::class.java, invalidItemName) as ContactType
+        val fromDb = dataManager.find(Country::class.java, updatedCode) as Country
         Assert.assertNotNull(fromDb)
-        Assert.assertEquals(fromDb.id, invalidItemName)
-        Assert.assertEquals(fromDb.name, invalidItemName)
-        Assert.assertEquals(fromDb.symbol, invalidItemName)
+        Assert.assertEquals(fromDb.id, updatedCode)
+        Assert.assertEquals(fromDb.name, updatedCode)
+        Assert.assertEquals(fromDb.code, updatedCode)
 
     }
 
@@ -131,13 +130,8 @@ class ContactTypeCrud : AndroidTestCase() {
         Assert.assertEquals(numEntities, dataManager.count(clazz))
     }
 
-    private fun <T : Dto> createInvalidEntity(clazz: Class<T>, id: String): Dto {
-        val ctor = clazz.constructors.first()
-        val dto = ctor.newInstance()
-        val field = clazz.declaredFields[0]
-        field.isAccessible = true
-        field.set(dto, id)
-        return dto as T
+    private fun createInvalidCountry(id: String): Country {
+        return Country(id)
     }
 
     //endregion

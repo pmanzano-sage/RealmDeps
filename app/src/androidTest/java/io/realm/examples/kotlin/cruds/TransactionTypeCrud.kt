@@ -1,4 +1,4 @@
-package io.realm.examples.kotlin
+package io.realm.examples.kotlin.cruds
 
 import android.test.AndroidTestCase
 import io.realm.Realm
@@ -6,7 +6,7 @@ import io.realm.RealmConfiguration
 import io.realm.examples.kotlin.data.DataManager
 import io.realm.examples.kotlin.data.Dto
 import io.realm.examples.kotlin.data.RealmDataManager
-import io.realm.examples.kotlin.dto.TransactionCategory
+import io.realm.examples.kotlin.dto.TransactionType
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import junit.framework.Assert
 
@@ -15,18 +15,16 @@ import junit.framework.Assert
  *
  * This entity is basic and has no dependencies.
  */
-class TransactionCategoryCrud : AndroidTestCase() {
+class TransactionTypeCrud : AndroidTestCase() {
 
     private lateinit var dataManager: DataManager
 
     // Item used for the test
-    private val enumItem = TransactionCategory.Companion.V3.OTHER_RECEIPT
+    private val enumItem = TransactionType.Companion.V3.OTHER_RECEIPT
     private val id = enumItem.name
-    private val updatedLabel = "updated label"
-    private val updatedMoneyIn = true
-    private val updatedNominalCode = 111
-    private val updatedTaxCodeId = "123"
-    private val item = TransactionCategory.create(enumItem)
+    private val updatedName = "updated name"
+    private val updatedOrdinal = 3
+    private val item = TransactionType.create(enumItem)
 
     /**
      * Start with a fresh db.
@@ -53,7 +51,7 @@ class TransactionCategoryCrud : AndroidTestCase() {
      */
     fun testSave() {
         dataManager.save(item)
-        checkNumEntitiesIs(TransactionCategory::class.java, 1)
+        checkNumEntitiesIs(TransactionType::class.java, 1)
     }
 
     /**
@@ -61,19 +59,17 @@ class TransactionCategoryCrud : AndroidTestCase() {
      */
     fun testUpdate() {
         dataManager.save(item)
-        val updated = TransactionCategory(id, SyncStatus.SYNC_SUCCESS, updatedLabel, updatedMoneyIn, updatedNominalCode, updatedTaxCodeId)
+        val updated = TransactionType(id, SyncStatus.SYNC_SUCCESS, updatedName, updatedOrdinal)
         dataManager.update(updated)
 
         // Now check that the item was actually modified
-        val fromDb = dataManager.find(TransactionCategory::class.java, id) as TransactionCategory
+        val fromDb = dataManager.find(TransactionType::class.java, id) as TransactionType
         Assert.assertNotNull(fromDb)
-        Assert.assertEquals(updatedLabel, fromDb.label)
-        Assert.assertEquals(updatedMoneyIn, fromDb.moneyIn)
-        Assert.assertEquals(updatedNominalCode, fromDb.nominalCode)
-        Assert.assertEquals(updatedTaxCodeId, fromDb.taxCodeId)
+        Assert.assertEquals(updatedName, fromDb.name)
+        Assert.assertEquals(updatedOrdinal, fromDb.ordinal)
 
         // Also check no new entities have been created
-        checkNumEntitiesIs(TransactionCategory::class.java, 1)
+        checkNumEntitiesIs(TransactionType::class.java, 1)
     }
 
 
@@ -83,14 +79,14 @@ class TransactionCategoryCrud : AndroidTestCase() {
     fun testDeleteContact() {
         dataManager.save(item)
         dataManager.delete(item)
-        checkNumEntitiesIs(TransactionCategory::class.java, 0)
+        checkNumEntitiesIs(TransactionType::class.java, 0)
     }
 
     /**
      * VALIDATION
      */
     fun testValidation() {
-        val invalidItem = createInvalidEntity(TransactionCategory::class.java, enumItem.name)
+        val invalidItem = createInvalidEntity(TransactionType::class.java, enumItem.name)
         try {
             dataManager.save(invalidItem)
             Assert.fail("Should have thrown a validation exception")
@@ -105,7 +101,7 @@ class TransactionCategoryCrud : AndroidTestCase() {
         // Insert an item into the db
         dataManager.save(item)
 
-        val invalidItem = createInvalidEntity(TransactionCategory::class.java, id)
+        val invalidItem = createInvalidEntity(TransactionType::class.java, enumItem.name)
         try {
             dataManager.save(invalidItem, false)
         } catch(e: Exception) {
@@ -113,12 +109,10 @@ class TransactionCategoryCrud : AndroidTestCase() {
         }
 
         // Now check that the item was actually modified
-        val fromDb = dataManager.find(TransactionCategory::class.java, id) as TransactionCategory
+        val fromDb = dataManager.find(TransactionType::class.java, enumItem.name) as TransactionType
         Assert.assertNotNull(fromDb)
-        Assert.assertEquals(item.label, fromDb.label)
-        Assert.assertEquals(item.moneyIn, fromDb.moneyIn)
-        Assert.assertEquals(item.nominalCode, fromDb.nominalCode)
-        Assert.assertEquals(item.taxCodeId, fromDb.taxCodeId)
+        Assert.assertEquals(enumItem.displayName, fromDb.name)
+
     }
 
     //region Auxiliary functions

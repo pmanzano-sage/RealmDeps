@@ -1,4 +1,4 @@
-package io.realm.examples.kotlin
+package io.realm.examples.kotlin.cruds
 
 import android.test.AndroidTestCase
 import io.realm.Realm

@@ -1,4 +1,4 @@
-package io.realm.examples.kotlin
+package io.realm.examples.kotlin.cruds
 
 import android.test.AndroidTestCase
 import io.realm.Realm
@@ -6,7 +6,7 @@ import io.realm.RealmConfiguration
 import io.realm.examples.kotlin.data.DataManager
 import io.realm.examples.kotlin.data.Dto
 import io.realm.examples.kotlin.data.RealmDataManager
-import io.realm.examples.kotlin.dto.ContactPersonType
+import io.realm.examples.kotlin.dto.TransactionCategory
 import io.realm.examples.kotlin.dto.definition.SyncStatus
 import junit.framework.Assert
 
@@ -15,17 +15,18 @@ import junit.framework.Assert
  *
  * This entity is basic and has no dependencies.
  */
-class ContactPersonTypeCrud : AndroidTestCase() {
+class TransactionCategoryCrud : AndroidTestCase() {
 
     private lateinit var dataManager: DataManager
 
     // Item used for the test
-    private val enumItem = ContactPersonType.Companion.V3.CONTRACTOR
+    private val enumItem = TransactionCategory.Companion.V3.OTHER_RECEIPT
     private val id = enumItem.name
-    private val updatedName = "updated name"
-    private val updatedSymbol = "updated symbol"
-    private val item = ContactPersonType.create(enumItem)
-    private val invalidItemName = "XYZ"
+    private val updatedLabel = "updated label"
+    private val updatedMoneyIn = true
+    private val updatedNominalCode = 111
+    private val updatedTaxCodeId = "123"
+    private val item = TransactionCategory.create(enumItem)
 
     /**
      * Start with a fresh db.
@@ -43,7 +44,6 @@ class ContactPersonTypeCrud : AndroidTestCase() {
         dataManager.deleteAll()
     }
 
-
     override fun tearDown() {
         super.tearDown()
     }
@@ -53,7 +53,7 @@ class ContactPersonTypeCrud : AndroidTestCase() {
      */
     fun testSave() {
         dataManager.save(item)
-        checkNumEntitiesIs(ContactPersonType::class.java, 1)
+        checkNumEntitiesIs(TransactionCategory::class.java, 1)
     }
 
     /**
@@ -61,22 +61,19 @@ class ContactPersonTypeCrud : AndroidTestCase() {
      */
     fun testUpdate() {
         dataManager.save(item)
-
-        // These entities have the name fixed, so we can not do this:
-        // item.name = updatedName
-        // So we create a new entity with the same id and different name & symbol
-        val updated = ContactPersonType(id, SyncStatus.SYNC_SUCCESS, updatedName, updatedSymbol)
+        val updated = TransactionCategory(id, SyncStatus.SYNC_SUCCESS, updatedLabel, updatedMoneyIn, updatedNominalCode, updatedTaxCodeId)
         dataManager.update(updated)
 
         // Now check that the item was actually modified
-        val fromDb = dataManager.find(ContactPersonType::class.java, id) as ContactPersonType
+        val fromDb = dataManager.find(TransactionCategory::class.java, id) as TransactionCategory
         Assert.assertNotNull(fromDb)
-        Assert.assertEquals(fromDb.id, id)
-        Assert.assertEquals(fromDb.name, updatedName)
-        Assert.assertEquals(fromDb.symbol, updatedSymbol)
+        Assert.assertEquals(updatedLabel, fromDb.label)
+        Assert.assertEquals(updatedMoneyIn, fromDb.moneyIn)
+        Assert.assertEquals(updatedNominalCode, fromDb.nominalCode)
+        Assert.assertEquals(updatedTaxCodeId, fromDb.taxCodeId)
 
         // Also check no new entities have been created
-        checkNumEntitiesIs(ContactPersonType::class.java, 1)
+        checkNumEntitiesIs(TransactionCategory::class.java, 1)
     }
 
 
@@ -86,14 +83,14 @@ class ContactPersonTypeCrud : AndroidTestCase() {
     fun testDeleteContact() {
         dataManager.save(item)
         dataManager.delete(item)
-        checkNumEntitiesIs(ContactPersonType::class.java, 0)
+        checkNumEntitiesIs(TransactionCategory::class.java, 0)
     }
 
     /**
      * VALIDATION
      */
     fun testValidation() {
-        val invalidItem = createInvalidEntity(ContactPersonType::class.java, invalidItemName)
+        val invalidItem = createInvalidEntity(TransactionCategory::class.java, enumItem.name)
         try {
             dataManager.save(invalidItem)
             Assert.fail("Should have thrown a validation exception")
@@ -106,10 +103,9 @@ class ContactPersonTypeCrud : AndroidTestCase() {
      */
     fun testDependencyLookup() {
         // Insert an item into the db
-        val existingItem = ContactPersonType(invalidItemName, SyncStatus.SYNC_SUCCESS, invalidItemName, invalidItemName)
-        dataManager.save(existingItem)
+        dataManager.save(item)
 
-        val invalidItem = createInvalidEntity(ContactPersonType::class.java, invalidItemName)
+        val invalidItem = createInvalidEntity(TransactionCategory::class.java, id)
         try {
             dataManager.save(invalidItem, false)
         } catch(e: Exception) {
@@ -117,12 +113,12 @@ class ContactPersonTypeCrud : AndroidTestCase() {
         }
 
         // Now check that the item was actually modified
-        val fromDb = dataManager.find(ContactPersonType::class.java, invalidItemName) as ContactPersonType
+        val fromDb = dataManager.find(TransactionCategory::class.java, id) as TransactionCategory
         Assert.assertNotNull(fromDb)
-        Assert.assertEquals(fromDb.id, invalidItemName)
-        Assert.assertEquals(fromDb.name, invalidItemName)
-        Assert.assertEquals(fromDb.symbol, invalidItemName)
-
+        Assert.assertEquals(item.label, fromDb.label)
+        Assert.assertEquals(item.moneyIn, fromDb.moneyIn)
+        Assert.assertEquals(item.nominalCode, fromDb.nominalCode)
+        Assert.assertEquals(item.taxCodeId, fromDb.taxCodeId)
     }
 
     //region Auxiliary functions

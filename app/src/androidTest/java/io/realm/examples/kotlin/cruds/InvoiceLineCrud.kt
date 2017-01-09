@@ -1,30 +1,28 @@
-package io.realm.examples.kotlin
+package io.realm.examples.kotlin.cruds
 
 import android.test.AndroidTestCase
 import android.util.Log
 import io.realm.Realm
 import io.realm.RealmConfiguration
 import io.realm.examples.kotlin.data.*
-import io.realm.examples.kotlin.dto.Account
-import io.realm.examples.kotlin.dto.AccountType
-import io.realm.examples.kotlin.dto.Amount
-import io.realm.examples.kotlin.dto.Payment
-import io.realm.examples.kotlin.dto.definition.SyncStatus
+import io.realm.examples.kotlin.dto.InvoiceLine
+import io.realm.examples.kotlin.dto.TaxRate
 import junit.framework.Assert
 
 /**
  * @author Pablo Manzano
  */
-class PaymentCrud : AndroidTestCase() {
+class InvoiceLineCrud : AndroidTestCase() {
 
     private lateinit var dataManager: DataManager
 
     // Item used for the test
     private val id = "id"
     private val parentId = "parent"
-    private val account = Account.create(id, AccountType.Companion.V3.CASH_IN_HAND)
-    private val updatedDate = "20160202"
-    private val item = Payment.create(id, parentId, "20160101", 1.0, "GBP", "description", account)
+    private val validName = "NoTax"
+    private val taxRate = TaxRate.create(id, validName, "0.0", true, null)
+    private val doubleVal = 1.0
+    private val item = InvoiceLine.create(id, parentId, 2.5, 3.9, "support hours ", taxRate)
 
     /**
      * Start with a fresh db.
@@ -52,8 +50,8 @@ class PaymentCrud : AndroidTestCase() {
      */
     fun testSave() {
         dataManager.save(item)
-        checkNumEntitiesIs(Payment::class.java, 1)
-        checkNumEntitiesIs(Account::class.java, 1)
+        checkNumEntitiesIs(InvoiceLine::class.java, 1)
+        checkNumEntitiesIs(TaxRate::class.java, 1)
     }
 
     /**
@@ -62,18 +60,19 @@ class PaymentCrud : AndroidTestCase() {
     fun testUpdate() {
         dataManager.save(item)
 
-        val updated = Payment.create(id, parentId, updatedDate, 1.0, "GBP", "description", account)
+        val updated = InvoiceLine.create(id, parentId, doubleVal, doubleVal, "support hours ", taxRate)
         dataManager.update(updated)
 
         // Now check that the item was actually modified
-        val fromDb = dataManager.find(Payment::class.java, id) as Payment
+        val fromDb = dataManager.find(InvoiceLine::class.java, id) as InvoiceLine
         Assert.assertNotNull(fromDb)
         Assert.assertEquals(fromDb.id, id)
-        Assert.assertEquals(fromDb.date, updatedDate)
+        Assert.assertEquals(fromDb.quantity, doubleVal)
+        Assert.assertEquals(fromDb.unitPrice, doubleVal)
 
         // Also check no new entities have been created
-        checkNumEntitiesIs(Payment::class.java, 1)
-        checkNumEntitiesIs(Account::class.java, 1)
+        checkNumEntitiesIs(InvoiceLine::class.java, 1)
+        checkNumEntitiesIs(TaxRate::class.java, 1)
     }
 
 
@@ -83,8 +82,8 @@ class PaymentCrud : AndroidTestCase() {
     fun testDelete() {
         dataManager.save(item)
         dataManager.delete(item)
-        checkNumEntitiesIs(Payment::class.java, 0)
-        checkNumEntitiesIs(Account::class.java, 1)
+        checkNumEntitiesIs(InvoiceLine::class.java, 0)
+        checkNumEntitiesIs(TaxRate::class.java, 1)
     }
 
     /**
@@ -92,7 +91,7 @@ class PaymentCrud : AndroidTestCase() {
      */
     fun testValidation() {
         val err = "Should have thrown a InvalidDependency/InvalidField exception"
-        val invalidItem = createInvalidPayment(id)
+        val invalidItem = createInvalidInvoiceLine(id)
         try {
             dataManager.save(invalidItem)
             Assert.fail(err)
@@ -109,11 +108,10 @@ class PaymentCrud : AndroidTestCase() {
      */
     fun testDependencyLookup() {
         // Insert into db the dependencies that will be searched by fillDeps
-        val accountType = AccountType.create(AccountType.Companion.V3.CHECKING)
-        val invalidAccount = Account(id, SyncStatus.SYNC_SUCCESS, "invalidAccount", "", accountType, 0, Amount.pounds(0.0))
-        dataManager.save(invalidAccount)
+        val invalidTaxRate = TaxRate.create(id, validName, "0.0", true, null)
+        dataManager.save(invalidTaxRate)
 
-        val invalidItem = createInvalidPayment(id)
+        val invalidItem = createInvalidInvoiceLine(id)
         try {
             dataManager.save(invalidItem, false)
         } catch(e: Exception) {
@@ -121,9 +119,9 @@ class PaymentCrud : AndroidTestCase() {
         }
 
         // Now check that the item was actually modified
-        val fromDb = dataManager.find(Payment::class.java, id) as Payment
+        val fromDb = dataManager.find(InvoiceLine::class.java, id) as InvoiceLine
         Assert.assertNotNull(fromDb)
-        Assert.assertEquals(fromDb.account?.accountType?.name, AccountType.Companion.V3.CHECKING.name.toLowerCase())
+        Assert.assertEquals(fromDb.taxRate?.name, validName)
     }
 
     /**
@@ -134,7 +132,7 @@ class PaymentCrud : AndroidTestCase() {
     fun testDependencyLookupFail() {
 
         // Create an invalid entity
-        val invalidEntity = createInvalidPayment(id)
+        val invalidEntity = createInvalidInvoiceLine(id)
         try {
             dataManager.save(invalidEntity, false)
             Assert.fail("A NotFoundException should be triggered")
@@ -146,7 +144,7 @@ class PaymentCrud : AndroidTestCase() {
         }
 
         // Now check that the item was actually NOT saved
-        checkNumEntitiesIs(Payment::class.java, 0)
+        checkNumEntitiesIs(InvoiceLine::class.java, 0)
     }
 
 
@@ -158,7 +156,7 @@ class PaymentCrud : AndroidTestCase() {
     fun testDependencyLookupFail2() {
 
         // Create an invalid entity
-        val invalidEntity = createInvalidPaymentNotFixable(id)
+        val invalidEntity = createInvalidInvoiceLineNotFixable(id)
         try {
             dataManager.save(invalidEntity, false)
             Assert.fail("A InvalidFieldException should be triggered")
@@ -170,7 +168,7 @@ class PaymentCrud : AndroidTestCase() {
         }
 
         // Now check that the item was actually NOT saved
-        checkNumEntitiesIs(Payment::class.java, 0)
+        checkNumEntitiesIs(InvoiceLine::class.java, 0)
     }
 
 
@@ -181,25 +179,23 @@ class PaymentCrud : AndroidTestCase() {
     }
 
     /**
-     * This Payment can be fixed because it lacks some dependency details.
+     * This InvoiceLine can be fixed because it lacks some dependency details.
      */
-    private fun createInvalidPayment(id: String): Payment {
-        // It will be invalid cos the AccountType has no name.
-        // It should be fixable since Account is annotated as SupportsIdOnly
-        val accountType = AccountType(AccountType.Companion.V3.CHECKING.name, symbol = "symbol")
-        val invalidAccount = Account(id, SyncStatus.SYNC_SUCCESS, "invalidAccount", "", accountType, 0, Amount.pounds(0.0))
-        return Payment.create(id, parentId, "20160101", 1.0, "GBP", "description", invalidAccount)
+    private fun createInvalidInvoiceLine(id: String): InvoiceLine {
+        // It will be invalid cos the TaxRate has no name.
+        // It should be fixable since TaxRate is annotated as SupportsIdOnly
+        val invalidTaxRate = TaxRate.create(id, "", "0.0", true, null)
+        return InvoiceLine.create(id, parentId, 2.5, 3.9, "support hours", invalidTaxRate)
     }
 
     /**
-     * This Payment can not be fixed because the amount is zero!
-     * 'amount' must be greater than zero.
+     * This InvoiceLine can not be fixed because the business name is missing!
+     * 'name' is a mandatory field.
      */
-    private fun createInvalidPaymentNotFixable(id: String): Payment {
-        // It will be invalid cos the account does not have a name
-        val accountType = AccountType(AccountType.Companion.V3.CHECKING.name, symbol = "symbol")
-        val invalidAccount = Account(id, SyncStatus.SYNC_SUCCESS, "invalidAccount", "", accountType, 0, Amount.pounds(0.0))
-        return Payment.create(id, parentId, "20160101", 0.0, "GBP", "description", invalidAccount)
+    private fun createInvalidInvoiceLineNotFixable(id: String): InvoiceLine {
+        // It will be invalid cos the quantity is zero (and can not be zero)
+        val taxRate = TaxRate.create(id, "NoTax", "0.0", true, null)
+        return InvoiceLine.create(id, parentId, 0.0, 4.5, "support hours", taxRate)
     }
 
     //endregion

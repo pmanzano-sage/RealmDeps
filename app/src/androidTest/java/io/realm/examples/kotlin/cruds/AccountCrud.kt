@@ -1,4 +1,4 @@
-package io.realm.examples.kotlin
+package io.realm.examples.kotlin.cruds
 
 import android.test.AndroidTestCase
 import android.util.Log
@@ -115,7 +115,7 @@ class AccountCrud : AndroidTestCase() {
 
         // Create invalid dependencies to fill parent entity
         val invalidItem1 = AccountType(dep1Id, SyncStatus.SYNC_SUCCESS, "", "")
-        val invalidEntity = Account(id, SyncStatus.SYNC_ERROR, "displayName", "", invalidItem1, 0, Amount.pounds(0.0))
+        val invalidEntity = Account(id, SyncStatus.SYNC_ERROR, "displayName", "", invalidItem1, 0, Amount.Companion.pounds(0.0))
 
         try {
             dataManager.save(invalidEntity, false)
@@ -140,7 +140,7 @@ class AccountCrud : AndroidTestCase() {
 
         // Create invalid dependencies to fill parent entity
         val invalidItem1 = AccountType(dep1Id, SyncStatus.SYNC_SUCCESS, "", "")
-        val invalidEntity = Account(id, SyncStatus.SYNC_ERROR, "displayName", "", invalidItem1, 0, Amount.pounds(0.0))
+        val invalidEntity = Account(id, SyncStatus.SYNC_ERROR, "displayName", "", invalidItem1, 0, Amount.Companion.pounds(0.0))
 
         try {
             dataManager.save(invalidEntity, false)
@@ -162,7 +162,7 @@ class AccountCrud : AndroidTestCase() {
     private fun createInvalidAccount(id: String): Account {
         // It will be invalid cos the accountType does not have a name
         val accountType = AccountType(symbol = "symbol")
-        return Account(id, SyncStatus.SYNC_ERROR, "displayName", "", accountType, 0, Amount.pounds(0.0))
+        return Account(id, SyncStatus.SYNC_ERROR, "displayName", "", accountType, 0, Amount.Companion.pounds(0.0))
     }
 
     //endregion

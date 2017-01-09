@@ -1,4 +1,4 @@
-package io.realm.examples.kotlin
+package io.realm.examples.kotlin.cruds
 
 import android.test.AndroidTestCase
 import android.util.Log
@@ -12,15 +12,22 @@ import junit.framework.Assert
 /**
  * @author Pablo Manzano
  */
-class SubTaxRateCrud : AndroidTestCase() {
+class TaxRateCrud : AndroidTestCase() {
 
     private lateinit var dataManager: DataManager
 
     private val id = "id"
-    private val parentId = "parentId"
     private val updatedName = "FiftyPercent"
     private val updatedPercentage = "0.25"
-    private var subTaxRate = SubTaxRate.create(id, parentId, "SubTax1", "0.1", true)
+
+    private val subTaxRate1 = SubTaxRate.create("", id, "SubTax1", "0.1", true)
+    private val subTaxRate2 = SubTaxRate.create("", id, "SubTax2", "0.2", true)
+    private val subTaxRate3 = SubTaxRate.create("", id, "SubTax3", "0.3", true)
+    private val subTaxRates = arrayListOf(subTaxRate1, subTaxRate2, subTaxRate3)
+    private val NUM_SUB_TAXES = subTaxRates.size.toLong()
+
+    private var taxRate = createTaxRate(id, "0.0")
+    private val subId = "subId"
 
     /**
      * Start with a fresh db.
@@ -47,27 +54,28 @@ class SubTaxRateCrud : AndroidTestCase() {
      * SAVE
      */
     fun testSave() {
-        dataManager.save(subTaxRate)
+        dataManager.save(taxRate)
         // main entity
-        checkNumEntitiesIs(SubTaxRate::class.java, 1)
+        checkNumEntitiesIs(TaxRate::class.java, 1)
+        // dependencies
+        checkNumEntitiesIs(SubTaxRate::class.java, NUM_SUB_TAXES)
     }
 
     /**
      * UPDATE
      */
     fun testUpdate() {
-        dataManager.save(subTaxRate)
+        dataManager.save(taxRate)
 
-        // Exactly the same subTaxRate, but we change the postal code of the main address
-        val taxRateUpdated = SubTaxRate.create(id, parentId, updatedName, updatedPercentage, true)
+        // Exactly the same taxRate, but we change the postal code of the main address
+        val taxRateUpdated = createTaxRate(id, updatedPercentage)
         dataManager.update(taxRateUpdated, false)
 
-        checkNumEntitiesIs(SubTaxRate::class.java, 1)
+        checkNumEntitiesIs(TaxRate::class.java, 1)
 
-        // now check the percentage that we have in the db
-        val item = dataManager.find(SubTaxRate::class.java, id) as SubTaxRate
+        // now check the postal code that we have in the db
+        val item = dataManager.find(TaxRate::class.java, id) as TaxRate
         Assert.assertNotNull(item)
-        Assert.assertEquals(updatedName, item.name)
         Assert.assertEquals(updatedPercentage, item.percentage)
     }
 
@@ -76,7 +84,8 @@ class SubTaxRateCrud : AndroidTestCase() {
      * DELETE
      */
     fun testDelete() {
-        dataManager.delete(subTaxRate)
+        dataManager.delete(taxRate)
+        checkNumEntitiesIs(TaxRate::class.java, 0)
         checkNumEntitiesIs(SubTaxRate::class.java, 0)
     }
 
@@ -85,7 +94,7 @@ class SubTaxRateCrud : AndroidTestCase() {
      */
     fun testValidation() {
         val err = "Should have thrown a InvalidDependency/InvalidField exception"
-        val invalidItem = createInvalidSubTaxRate(id)
+        val invalidItem = createInvalidTaxRate(id)
         try {
             dataManager.save(invalidItem)
             Assert.fail(err)
@@ -102,10 +111,10 @@ class SubTaxRateCrud : AndroidTestCase() {
      */
     fun testDependencyLookup() {
         // Insert into db the dependencies that will be searched by fillDeps
-        val subTaxRate = SubTaxRate.create(id, parentId, updatedName, "0.5", true)
+        val subTaxRate = SubTaxRate.create(subId, id, updatedName, "0.3", true)
         dataManager.save(subTaxRate)
 
-        val invalidItem = createInvalidSubTaxRate(id)
+        val invalidItem = createInvalidTaxRate(id)
         try {
             dataManager.save(invalidItem, false)
         } catch(e: Exception) {
@@ -113,9 +122,13 @@ class SubTaxRateCrud : AndroidTestCase() {
         }
 
         // Now check that the item was actually modified
-        val fromDb = dataManager.find(SubTaxRate::class.java, id) as SubTaxRate
+        val fromDb = dataManager.find(TaxRate::class.java, id) as TaxRate
         Assert.assertNotNull(fromDb)
-        Assert.assertEquals(fromDb.name, updatedName)
+        Assert.assertNotNull(fromDb.subTaxRates?.findByName(updatedName))
+    }
+
+    fun List<SubTaxRate>.findByName(name: String): SubTaxRate? {
+        return find { it.name == name }
     }
 
     /**
@@ -126,7 +139,7 @@ class SubTaxRateCrud : AndroidTestCase() {
     fun testDependencyLookupFail() {
 
         // Create an invalid entity
-        val invalidEntity = createInvalidSubTaxRate(id)
+        val invalidEntity = createInvalidTaxRate(id)
         try {
             dataManager.save(invalidEntity, false)
             Assert.fail("A NotFoundException should be triggered")
@@ -142,20 +155,63 @@ class SubTaxRateCrud : AndroidTestCase() {
     }
 
 
+    /**
+     * DEPENDENCY LOOKUP FAILURE (INVALID FIELD)
+     *
+     * The same test as testDependencyLookup, but this time the missing field is not a dependency.
+     * Since TaxRate is annotated as SupportsIdOnly it will try to find it in the db, and throw
+     * a NotFoundException.
+     */
+    fun testDependencyLookupFail2() {
+
+        // Create an invalid entity
+        val invalidEntity = createInvalidTaxRateNotFixable(id)
+        try {
+            dataManager.save(invalidEntity, false)
+            Assert.fail("A InvalidFieldException should be triggered")
+        } catch(e: NotFoundException) {
+            Log.w("cool", "$e")
+        } catch(e: Exception) {
+            e.printStackTrace()
+            Assert.fail("Should have thrown a InvalidFieldException instead of ${e.javaClass.simpleName}")
+        }
+
+        // Now check that the item was actually NOT saved
+        checkNumEntitiesIs(TaxRate::class.java, 0)
+    }
+
+
     //region Auxiliary functions
 
     private fun <T : Dto> checkNumEntitiesIs(clazz: Class<T>, numEntities: Long) {
         Assert.assertEquals(numEntities, dataManager.count(clazz))
     }
 
+
+    /**
+     * Creates a dummy TaxRate.
+     */
+    private fun createTaxRate(id: String, percentage: String): TaxRate {
+        return TaxRate.create(id, "NoTax", percentage, true, subTaxRates)
+    }
+
     /**
      * This TaxRate can be fixed because it lacks some dependency details.
      */
-    private fun createInvalidSubTaxRate(id: String): SubTaxRate {
+    private fun createInvalidTaxRate(id: String): TaxRate {
         // It will be invalid since the name is a mandatory field of a subTaxRate
-        return SubTaxRate.create(id, parentId, "", "0.5", true)
+        val subTaxRate = SubTaxRate.create(subId, id, "", "0.3", true)
+        val subTaxes = arrayListOf(subTaxRate)
+        return TaxRate.create(id, "Exempt", "0.0", true, subTaxes)
     }
 
+    /**
+     * This TaxRate can not be fixed because the name is missing!
+     * 'name' is a mandatory field.
+     */
+    fun createInvalidTaxRateNotFixable(id: String): TaxRate {
+        return TaxRate.create(id, "", "0.1", true, subTaxRates)
+    }
 
     //endregion
 
