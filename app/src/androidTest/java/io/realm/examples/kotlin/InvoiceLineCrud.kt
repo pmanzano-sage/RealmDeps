@@ -20,7 +20,7 @@ class InvoiceLineCrud : AndroidTestCase() {
     private val id = "id"
     private val parentId = "parent"
     private val validName = "NoTax"
-    private val taxRate = TaxRate.create(id, validName, "0.0", true)
+    private val taxRate = TaxRate.create(id, validName, "0.0", true, null)
     private val doubleVal = 1.0
     private val item = InvoiceLine.create(id, parentId, 2.5, 3.9, "support hours ", taxRate)
 
@@ -108,7 +108,7 @@ class InvoiceLineCrud : AndroidTestCase() {
      */
     fun testDependencyLookup() {
         // Insert into db the dependencies that will be searched by fillDeps
-        val invalidTaxRate = TaxRate.create(id, validName, "0.0", true)
+        val invalidTaxRate = TaxRate.create(id, validName, "0.0", true, null)
         dataManager.save(invalidTaxRate)
 
         val invalidItem = createInvalidInvoiceLine(id)
@@ -184,7 +184,7 @@ class InvoiceLineCrud : AndroidTestCase() {
     private fun createInvalidInvoiceLine(id: String): InvoiceLine {
         // It will be invalid cos the TaxRate has no name.
         // It should be fixable since TaxRate is annotated as SupportsIdOnly
-        val invalidTaxRate = TaxRate.create(id, "", "0.0", true)
+        val invalidTaxRate = TaxRate.create(id, "", "0.0", true, null)
         return InvoiceLine.create(id, parentId, 2.5, 3.9, "support hours", invalidTaxRate)
     }
 
@@ -194,7 +194,7 @@ class InvoiceLineCrud : AndroidTestCase() {
      */
     private fun createInvalidInvoiceLineNotFixable(id: String): InvoiceLine {
         // It will be invalid cos the quantity is zero (and can not be zero)
-        val taxRate = TaxRate.create(id, "NoTax", "0.0", true)
+        val taxRate = TaxRate.create(id, "NoTax", "0.0", true, null)
         return InvoiceLine.create(id, parentId, 0.0, 4.5, "support hours", taxRate)
     }
 
