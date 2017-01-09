@@ -11,9 +11,14 @@ interface DataManager {
     fun find(clazz: Class<out Dto>, id: String): Dto?
 
     /**
-     * Saves a dto
+     * Saves a dto.
+     *
+     * If validate = true, the entity will be validated before trying to persist it.
+     * If validate = false, the entity will NOT be validated and every invalid dependency
+     * annotated with @SupportsIdOnly will be replaced with one taken from the db using its id.
      */
     fun save(dto: Dto, validate: Boolean = true): Boolean
+
     fun create(dto: Dto, validate: Boolean = true): Boolean
     fun update(dto: Dto, validate: Boolean = true): Boolean
     fun delete(dto: Dto): Boolean
@@ -22,7 +27,8 @@ interface DataManager {
 }
 
 /**
- * Exception to throw when something can't be found in the database.
+ * Exception to throw when something can't be found in the database
+ * and the entity is annotated with @SupportsIdOnly
  */
 class NotFoundException(msg: String? = null, cause: Throwable? = null) : Exception(msg, cause)
 
@@ -34,11 +40,8 @@ class InvalidDependencyException(msg: String? = null, cause: Throwable? = null) 
 
 
 /**
- * Exception to throw when an entity has an invalid field that can not be fixed.
+ * Exception to throw when an entity has an invalid field that can not be fixed
+ * and the entity is NOT annotated with @SupportsIdOnly
  */
 class InvalidFieldException(msg: String? = null, cause: Throwable? = null) : Exception(msg, cause)
 
-/**
- * Exception to throw when an illegal duplicate is encountered.
- */
-class DuplicateException(msg: String? = null, key: String? = null, cause: Throwable? = null) : Exception(msg, cause)
