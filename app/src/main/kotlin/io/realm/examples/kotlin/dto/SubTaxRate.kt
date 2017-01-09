@@ -15,13 +15,13 @@ import io.realm.examples.kotlin.entity.RealmSubTaxRate
 data class SubTaxRate(
         override val id: String = generateId(),
         override var sync: SyncStatus = SyncStatus.getDefault(),
-        val name: String,
-        val symbol: String,
-        val percentage: String,
-        val current: Boolean,
+        val name: String = "",
+        val symbol: String = "",
+        val percentage: String = "",
+        val current: Boolean = true,
         val editable: Boolean? = false,
         val deletable: Boolean? = false,
-        var parentApiId: String
+        var parentId: String = ""
 ) : Dto {
 
     override fun getDbClass(): Class<out RealmSubTaxRate> {
@@ -43,4 +43,19 @@ data class SubTaxRate(
     override fun toDisplayString(): String {
         return name
     }
+
+    // Convenient factory methods
+    companion object {
+
+        /**
+         * Example of usage:
+         * val subTaxRate = SubTaxRate.create( id, parentId, "NoTax", "0.0", true )
+         */
+        fun create(id: String, parentId: String, name: String, percentage: String, current: Boolean): SubTaxRate {
+            val (finalId, status) = Dto.init(id)
+            return SubTaxRate(finalId, status, name, name.toUpperCase(), percentage, current, false, false, parentId)
+        }
+
+    }
+
 }

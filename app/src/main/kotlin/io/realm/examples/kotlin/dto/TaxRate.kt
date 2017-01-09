@@ -70,9 +70,9 @@ data class TaxRate(
          * Example of usage:
          * val taxRate = TaxRate.create( id, "NoTax", "0.0", true )
          */
-        fun create(id: String, name: String, percentage: String, current: Boolean): TaxRate {
+        fun create(id: String, name: String, percentage: String, current: Boolean, subTaxes: List<SubTaxRate>?): TaxRate {
             val (finalId, status) = Dto.init(id)
-            return TaxRate(finalId, status, name, name.toUpperCase(), percentage, current, subTaxRates = null)
+            return TaxRate(finalId, status, name, name.toUpperCase(), percentage, current, subTaxRates = subTaxes)
         }
 
     }

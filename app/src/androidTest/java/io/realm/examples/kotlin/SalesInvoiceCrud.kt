@@ -75,7 +75,6 @@ class SalesInvoiceCrud : AndroidTestCase() {
     /**
      * Start with a fresh db without any invoices and create one with API_ID_1 and 3 invoice lines.
      */
-    @Throws(Exception::class)
     override fun setUp() {
         super.setUp()
 
@@ -89,7 +88,6 @@ class SalesInvoiceCrud : AndroidTestCase() {
         dataManager.deleteAll()
     }
 
-    @Throws(Exception::class)
     override fun tearDown() {
         super.tearDown()
     }
@@ -101,7 +99,6 @@ class SalesInvoiceCrud : AndroidTestCase() {
      * - The invoice created in [.setUp] is correctly saved into the db.
      * - It has the correct number of invoice lines (3)
      */
-    @Throws(Exception::class)
     fun testSaveSalesInvoice() {
         dataManager.save(testInvoice)
         checkNumEntitiesIs(SalesInvoice::class.java, 1)
@@ -117,7 +114,6 @@ class SalesInvoiceCrud : AndroidTestCase() {
      * - Dependent payments are updated correctly.
      * - No dangling dependencies are left.
      */
-    @Throws(Exception::class)
     fun testUpdateSalesInvoice1() {
 
         dataManager.save(testInvoice)
@@ -142,7 +138,6 @@ class SalesInvoiceCrud : AndroidTestCase() {
      * - After deleting all the invoices there are no invoices left in the db.
      * - It also checks that no dependencies (in this case invoice lines and payments) are left in the db.
      */
-    @Throws(Exception::class)
     fun testDeleteSalesInvoice() {
 
         dataManager.save(testInvoice, true)
@@ -158,7 +153,6 @@ class SalesInvoiceCrud : AndroidTestCase() {
     /**
      * Create a test invoice using the line items received in the last param.
      */
-    @Throws(Exception::class)
     private fun createInvoice(
             id: String, invoiceNumber: String, reference: String, date: String,
             items: Array<String>, payItems: Array<String>): SalesInvoice {

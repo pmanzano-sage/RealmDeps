@@ -51,6 +51,7 @@ open class RealmSalesInvoice(
         try {
             invoiceLines?.map { it.checkValid() }
             payments?.map { it.checkValid() }
+            contact?.checkValid()
         } catch (e: InvalidFieldException) {
             throw InvalidDependencyException("RealmSalesInvoice has invalid dependencies", e)
         }
