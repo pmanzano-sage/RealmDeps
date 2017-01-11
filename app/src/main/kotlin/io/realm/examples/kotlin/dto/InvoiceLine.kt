@@ -16,6 +16,7 @@ data class InvoiceLine(
         var unitPrice: Double = 0.0,
         var netAmount: Double = 0.0,
         var taxAmount: Double = 0.0,
+        var category: TransactionCategory? = null,
         var taxRate: TaxRate? = null,
         var totalAmount: Double = 0.0,
         var parentId: String = ""
@@ -61,7 +62,7 @@ data class InvoiceLine(
 
             val (finalId, status) = Dto.init(id)
 
-            return InvoiceLine(finalId, status, description, qty, price, net, tax, taxRate, total, parentId)
+            return InvoiceLine(finalId, status, description, qty, price, net, tax, null, taxRate, total, parentId)
         }
 
     }

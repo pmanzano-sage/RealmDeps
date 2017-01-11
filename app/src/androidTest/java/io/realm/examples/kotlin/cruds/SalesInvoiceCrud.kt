@@ -226,7 +226,7 @@ class SalesInvoiceCrud : AndroidTestCase() {
         val netPercentage = 1 - DEFAULT_TAX
         val net = total * netPercentage
         val tax = total * DEFAULT_TAX
-        return InvoiceLine(id, SyncStatus.SYNC_SUCCESS, description, qty, price, net, tax, null, total, parentId)
+        return InvoiceLine(id, SyncStatus.SYNC_SUCCESS, description, qty, price, net, tax, null, null, total, parentId)
     }
 
     /**

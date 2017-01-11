@@ -20,6 +20,7 @@ open class RealmInvoiceLine(
         open var unitPrice: Double = 0.0,
         open var netAmount: Double = 0.0,
         open var taxAmount: Double = 0.0,
+        open var category: RealmTransactionCategory? = null,
         open var taxRate: RealmTaxRate? = null,
         open var totalAmount: Double = 0.0,
         override var parentId: String = ""
@@ -68,6 +69,7 @@ open class RealmInvoiceLine(
                     unitPrice = price,
                     netAmount = net,
                     taxAmount = tax,
+                    category = null,
                     taxRate = null,
                     totalAmount = total,
                     parentId = parentId)
