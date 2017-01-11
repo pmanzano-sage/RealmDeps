@@ -4,8 +4,10 @@ import io.realm.annotations.PrimaryKey
 import io.realm.annotations.RealmClass
 import io.realm.annotations.Required
 import io.realm.examples.kotlin.data.*
+import io.realm.examples.kotlin.dto.Amount
 import io.realm.examples.kotlin.dto.Transaction
 import io.realm.examples.kotlin.dto.definition.SyncStatus
+import java.text.DecimalFormat
 import java.util.*
 
 @RealmClass
@@ -31,9 +33,21 @@ open class RealmTransaction(
         open var timestamp: String = ""
 ) : RealmDbModel {
 
+//    override fun toDto(): Transaction {
+//        return convertToDto(RealmTransaction::class.java, getDtoClass())
+//    }
+
+    // custom mapper
     override fun toDto(): Transaction {
-        return convertToDto(RealmTransaction::class.java, getDtoClass())
+        val value = DECIMAL_FORMATTER.parse(amount).toDouble()
+        val transaction = Transaction(id, SyncStatus.values()[sync],
+                Amount(value, currency), title, reference,
+                date, accountSource?.toDto(), accountDest?.toDto(), type, category?.toDto(), attachment?.toDto(),
+                contact?.toDto(), taxRate?.toDto(), isReadonly)
+        transaction.timestamp = timestamp
+        return transaction
     }
+
 
     override fun checkValid(): DbModel {
         if (title.isBlank()) {
@@ -56,6 +70,10 @@ open class RealmTransaction(
 
     override fun getDtoClass(): Class<out Transaction> {
         return Transaction::class.java
+    }
+
+    companion object {
+        private val DECIMAL_FORMATTER = DecimalFormat.getCurrencyInstance()
     }
 
 }

@@ -3,6 +3,7 @@ package io.realm.examples.kotlin.cruds
 import android.test.AndroidTestCase
 import io.realm.Realm
 import io.realm.RealmConfiguration
+import io.realm.examples.kotlin.CrudUtils
 import io.realm.examples.kotlin.data.DataManager
 import io.realm.examples.kotlin.data.Dto
 import io.realm.examples.kotlin.data.RealmDataManager
@@ -93,7 +94,7 @@ class ContactTypeCrud : AndroidTestCase() {
      * VALIDATION
      */
     fun testValidation() {
-        val invalidItem = createInvalidEntity(ContactType::class.java, invalidItemName)
+        val invalidItem = CrudUtils.createInvalidEntity(ContactType::class.java, invalidItemName)
         try {
             dataManager.save(invalidItem)
             Assert.fail("Should have thrown a validation exception")
@@ -109,7 +110,7 @@ class ContactTypeCrud : AndroidTestCase() {
         val existingItem = ContactType(invalidItemName, SyncStatus.SYNC_SUCCESS, invalidItemName, invalidItemName)
         dataManager.save(existingItem)
 
-        val invalidItem = createInvalidEntity(ContactType::class.java, invalidItemName)
+        val invalidItem = CrudUtils.createInvalidEntity(ContactType::class.java, invalidItemName)
         try {
             dataManager.save(invalidItem, false)
         } catch(e: Exception) {
@@ -129,15 +130,6 @@ class ContactTypeCrud : AndroidTestCase() {
 
     private fun <T : Dto> checkNumEntitiesIs(clazz: Class<T>, numEntities: Long) {
         Assert.assertEquals(numEntities, dataManager.count(clazz))
-    }
-
-    private fun <T : Dto> createInvalidEntity(clazz: Class<T>, id: String): Dto {
-        val ctor = clazz.constructors.first()
-        val dto = ctor.newInstance()
-        val field = clazz.declaredFields[0]
-        field.isAccessible = true
-        field.set(dto, id)
-        return dto as T
     }
 
     //endregion

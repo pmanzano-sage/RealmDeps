@@ -20,15 +20,24 @@ class AddressCrud : AndroidTestCase() {
 
     private lateinit var dataManager: DataManager
 
-    private val enumItem = AddressType.Companion.V3.DELIVERY
-    private val id = "ADR1"
-    private var item = Address.create(id, "street1", "street2", "town", "county", "postCode", enumItem)
+    companion object {
+        private val enumItem = AddressType.Companion.V3.DELIVERY
+        private val id = "ADR1"
+        private var item = Address.create(id, "street1", "street2", "town", "county", "postCode", enumItem)
 
-    private val street1Updated = "street1 updated"
-    private val street2Updated = "street2 updated"
+        private val street1Updated = "street1 updated"
+        private val street2Updated = "street2 updated"
 
-    private val dep1Id = "XYZ"
-    private val dep2Id = "US"
+        private val dep1Id = "XYZ"
+        private val dep2Id = "US"
+
+
+        fun createInvalidAddress(id: String): Address {
+            val invalidItem1 = AddressType(dep1Id)
+            val invalidItem2 = Country(dep2Id)
+            return Address(id, SyncStatus.SYNC_SUCCESS, street1Updated, street2Updated, "town", "county", "postCode", invalidItem2, invalidItem1)
+        }
+    }
 
     /**
      * Start with a fresh db.
@@ -139,13 +148,6 @@ class AddressCrud : AndroidTestCase() {
     private fun <T : Dto> checkNumEntitiesIs(clazz: Class<T>, numEntities: Long) {
         Assert.assertEquals(numEntities, dataManager.count(clazz))
     }
-
-    private fun createInvalidAddress(id: String): Address {
-        val invalidItem1 = AddressType(dep1Id)
-        val invalidItem2 = Country(dep2Id)
-        return Address(id, SyncStatus.SYNC_SUCCESS, street1Updated, street2Updated, "town", "county", "postCode", invalidItem2, invalidItem1)
-    }
-
 
     //endregion
 

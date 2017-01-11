@@ -16,18 +16,52 @@ class TaxRateCrud : AndroidTestCase() {
 
     private lateinit var dataManager: DataManager
 
-    private val id = "id"
-    private val updatedName = "FiftyPercent"
-    private val updatedPercentage = "0.25"
+    companion object {
 
-    private val subTaxRate1 = SubTaxRate.create("", id, "SubTax1", "0.1", true)
-    private val subTaxRate2 = SubTaxRate.create("", id, "SubTax2", "0.2", true)
-    private val subTaxRate3 = SubTaxRate.create("", id, "SubTax3", "0.3", true)
-    private val subTaxRates = arrayListOf(subTaxRate1, subTaxRate2, subTaxRate3)
-    private val NUM_SUB_TAXES = subTaxRates.size.toLong()
+        private val id = "id"
+        private val updatedName = "FiftyPercent"
+        private val updatedPercentage = "0.25"
+        private var taxRate = createTaxRate(id, "0.0")
+        private val subId = "-1"
 
-    private var taxRate = createTaxRate(id, "0.0")
-    private val subId = "subId"
+        /**
+         * Creates a dummy TaxRate.
+         *
+         * Example of usage:
+         * val taxRate = createTaxRate(id, "0.0")
+         */
+        fun createTaxRate(id: String, percentage: String): TaxRate {
+            val subTaxRate1 = SubTaxRate.create("$id-1", id, "SubTax1", "0.1", true)
+            val subTaxRate2 = SubTaxRate.create("$id-2", id, "SubTax2", "0.2", true)
+            val subTaxRate3 = SubTaxRate.create("$id-3", id, "SubTax3", "0.3", true)
+            val subTaxRates = arrayListOf(subTaxRate1, subTaxRate2, subTaxRate3)
+            return TaxRate.create(id, "NoTax", percentage, true, subTaxRates)
+        }
+
+        /**
+         * This TaxRate can be fixed because it lacks some dependency details.
+         * NOTE: It will only have one subtax and the percentage of that subtax will match
+         * the one received.
+         */
+        fun createInvalidTaxRate(id: String, percentage: String): TaxRate {
+            // It will be invalid since the name is a mandatory field of a subTaxRate
+            val subTaxRate = SubTaxRate.create("$id$subId", id, "", percentage, true)
+            val subTaxes = arrayListOf(subTaxRate)
+            return TaxRate.create(id, "Exempt", percentage, true, subTaxes)
+        }
+
+        /**
+         * This TaxRate can not be fixed because the name is missing!
+         * 'name' is a mandatory field.
+         */
+        fun createInvalidTaxRateNotFixable(id: String): TaxRate {
+            val subTaxRate1 = SubTaxRate.create("$id-1", id, "SubTax1", "0.1", true)
+            val subTaxRate2 = SubTaxRate.create("$id-2", id, "SubTax2", "0.2", true)
+            val subTaxRate3 = SubTaxRate.create("$id-3", id, "SubTax3", "0.3", true)
+            val subTaxRates = arrayListOf(subTaxRate1, subTaxRate2, subTaxRate3)
+            return TaxRate.create(id, "", "0.1", true, subTaxRates)
+        }
+    }
 
     /**
      * Start with a fresh db.
@@ -58,7 +92,7 @@ class TaxRateCrud : AndroidTestCase() {
         // main entity
         checkNumEntitiesIs(TaxRate::class.java, 1)
         // dependencies
-        checkNumEntitiesIs(SubTaxRate::class.java, NUM_SUB_TAXES)
+        checkNumEntitiesIs(SubTaxRate::class.java, taxRate.subTaxRates?.size?.toLong() ?: 0)
     }
 
     /**
@@ -94,7 +128,7 @@ class TaxRateCrud : AndroidTestCase() {
      */
     fun testValidation() {
         val err = "Should have thrown a InvalidDependency/InvalidField exception"
-        val invalidItem = createInvalidTaxRate(id)
+        val invalidItem = createInvalidTaxRate(id, "0.0")
         try {
             dataManager.save(invalidItem)
             Assert.fail(err)
@@ -111,10 +145,11 @@ class TaxRateCrud : AndroidTestCase() {
      */
     fun testDependencyLookup() {
         // Insert into db the dependencies that will be searched by fillDeps
-        val subTaxRate = SubTaxRate.create(subId, id, updatedName, "0.3", true)
+        val goodPercentage = "0.3"
+        val subTaxRate = SubTaxRate.create("$id$subId", id, updatedName, goodPercentage, true)
         dataManager.save(subTaxRate)
 
-        val invalidItem = createInvalidTaxRate(id)
+        val invalidItem = createInvalidTaxRate(id, "0.0")
         try {
             dataManager.save(invalidItem, false)
         } catch(e: Exception) {
@@ -124,7 +159,9 @@ class TaxRateCrud : AndroidTestCase() {
         // Now check that the item was actually modified
         val fromDb = dataManager.find(TaxRate::class.java, id) as TaxRate
         Assert.assertNotNull(fromDb)
-        Assert.assertNotNull(fromDb.subTaxRates?.findByName(updatedName))
+        val subTax = fromDb.subTaxRates?.findByName(updatedName)
+        Assert.assertNotNull(subTax)
+        Assert.assertEquals(goodPercentage, subTax?.percentage)
     }
 
     fun List<SubTaxRate>.findByName(name: String): SubTaxRate? {
@@ -139,7 +176,7 @@ class TaxRateCrud : AndroidTestCase() {
     fun testDependencyLookupFail() {
 
         // Create an invalid entity
-        val invalidEntity = createInvalidTaxRate(id)
+        val invalidEntity = createInvalidTaxRate(id, "0.0")
         try {
             dataManager.save(invalidEntity, false)
             Assert.fail("A NotFoundException should be triggered")
@@ -185,32 +222,6 @@ class TaxRateCrud : AndroidTestCase() {
 
     private fun <T : Dto> checkNumEntitiesIs(clazz: Class<T>, numEntities: Long) {
         Assert.assertEquals(numEntities, dataManager.count(clazz))
-    }
-
-
-    /**
-     * Creates a dummy TaxRate.
-     */
-    private fun createTaxRate(id: String, percentage: String): TaxRate {
-        return TaxRate.create(id, "NoTax", percentage, true, subTaxRates)
-    }
-
-    /**
-     * This TaxRate can be fixed because it lacks some dependency details.
-     */
-    private fun createInvalidTaxRate(id: String): TaxRate {
-        // It will be invalid since the name is a mandatory field of a subTaxRate
-        val subTaxRate = SubTaxRate.create(subId, id, "", "0.3", true)
-        val subTaxes = arrayListOf(subTaxRate)
-        return TaxRate.create(id, "Exempt", "0.0", true, subTaxes)
-    }
-
-    /**
-     * This TaxRate can not be fixed because the name is missing!
-     * 'name' is a mandatory field.
-     */
-    fun createInvalidTaxRateNotFixable(id: String): TaxRate {
-        return TaxRate.create(id, "", "0.1", true, subTaxRates)
     }
 
     //endregion

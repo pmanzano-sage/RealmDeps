@@ -19,13 +19,39 @@ class BusinessCrud : AndroidTestCase() {
 
     private lateinit var dataManager: DataManager
 
-    // Item used for the test
-    private val id = "ciaId"
-    private val invalidId = "invalidId"
-    private val address = Address.create(null, "street1", "street2", "town", "county", "postCode", AddressType.Companion.V3.DELIVERY)
-    private val updatedName = "updated name"
-    private val updatedMobile = "updated mobile"
-    private val item = Business.create(id, "Sage", "sage.com", "123123123", "932740909", address)
+    companion object {
+        private val id = "ciaId"
+        private val invalidId = "invalidId"
+        private val address = Address.create(null, "street1", "street2", "town", "county", "postCode", AddressType.Companion.V3.DELIVERY)
+        private val updatedName = "updated name"
+        private val updatedMobile = "updated mobile"
+        private val item = Business.create(id, "Sage", "sage.com", "123123123", "932740909", address)
+
+        /**
+         * This Business can be fixed because it lacks some dependency details.
+         */
+        fun createInvalidBusiness(id: String): Business {
+            // It will be invalid cos the AddressType has no symbol.
+            // It should be fixable since AddressType is annotated as SupportsIdOnly
+            val invalidAddressType = AddressType(invalidId, SyncStatus.SYNC_SUCCESS, invalidId)
+            val ireland = Country.create(Country.Companion.Code.IE)
+            val invalidAddress = Address(id, SyncStatus.SYNC_ERROR, "street1", "street2", "town", "county", "postCode", ireland, invalidAddressType)
+            return Business.create(id, name = "UglyBusiness", address = invalidAddress)
+        }
+
+        /**
+         * This Business can not be fixed because the business name is missing!
+         * 'name' is a mandatory field.
+         */
+        fun createInvalidBusinessNotFixable(id: String): Business {
+            // It will be invalid cos the Address has an invalid AddressType
+            val invalidAddressType = AddressType(invalidId)
+            val ireland = Country.create(Country.Companion.Code.IE)
+            val invalidAddress = Address(id, SyncStatus.SYNC_ERROR, "street1", "street2", "town", "county", "postCode", ireland, invalidAddressType)
+            return Business(id, SyncStatus.SYNC_ERROR, address = invalidAddress)
+        }
+
+    }
 
     /**
      * Start with a fresh db.
@@ -182,30 +208,6 @@ class BusinessCrud : AndroidTestCase() {
 
     private fun <T : Dto> checkNumEntitiesIs(clazz: Class<T>, numEntities: Long) {
         Assert.assertEquals(numEntities, dataManager.count(clazz))
-    }
-
-    /**
-     * This Business can be fixed because it lacks some dependency details.
-     */
-    private fun createInvalidBusiness(id: String): Business {
-        // It will be invalid cos the AddressType has no symbol.
-        // It should be fixable since AddressType is annotated as SupportsIdOnly
-        val invalidAddressType = AddressType(invalidId, SyncStatus.SYNC_SUCCESS, invalidId)
-        val ireland = Country.create(Country.Companion.Code.IE)
-        val invalidAddress = Address(id, SyncStatus.SYNC_ERROR, "street1", "street2", "town", "county", "postCode", ireland, invalidAddressType)
-        return Business.create(id, name = "UglyBusiness", address = invalidAddress)
-    }
-
-    /**
-     * This Business can not be fixed because the business name is missing!
-     * 'name' is a mandatory field.
-     */
-    private fun createInvalidBusinessNotFixable(id: String): Business {
-        // It will be invalid cos the Address has an invalid AddressType
-        val invalidAddressType = AddressType(invalidId)
-        val ireland = Country.create(Country.Companion.Code.IE)
-        val invalidAddress = Address(id, SyncStatus.SYNC_ERROR, "street1", "street2", "town", "county", "postCode", ireland, invalidAddressType)
-        return Business(id, SyncStatus.SYNC_ERROR, address = invalidAddress)
     }
 
     //endregion

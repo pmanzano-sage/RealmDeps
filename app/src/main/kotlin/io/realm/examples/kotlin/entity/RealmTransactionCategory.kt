@@ -40,4 +40,5 @@ open class RealmTransactionCategory(
     companion object {
         val FIELD_NAME = "label"
     }
+
 }

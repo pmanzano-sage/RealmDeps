@@ -21,11 +21,19 @@ class AccountCrud : AndroidTestCase() {
 
     private lateinit var dataManager: DataManager
 
-    private val enumItem = AccountType.Companion.V3.CHECKING
-    private val updatedCountry = Country.Companion.Code.IE
-    private val id = "myChecking1"
-    private val item = Account.create(id, enumItem)
-    private val dep1Id = "XYZ"
+    companion object {
+        private val enumItem = AccountType.Companion.V3.CHECKING
+        private val updatedCountry = Country.Companion.Code.IE
+        private val id = "myChecking1"
+        private val item = Account.create(id, enumItem)
+        private val dep1Id = "XYZ"
+
+        fun createInvalidAccount(id: String): Account {
+            // It will be invalid cos the accountType does not have a name
+            val accountType = AccountType(symbol = "symbol")
+            return Account(id, SyncStatus.SYNC_ERROR, "displayName", "", accountType, 0, Amount.Companion.pounds(0.0))
+        }
+    }
 
     /**
      * Start with a fresh db.
@@ -53,7 +61,7 @@ class AccountCrud : AndroidTestCase() {
     /**
      * SAVE
      */
-    fun testSaveContact() {
+    fun testSave() {
         dataManager.save(item)
         checkNumEntitiesIs(Account::class.java, 1)
     }
@@ -157,12 +165,6 @@ class AccountCrud : AndroidTestCase() {
 
     private fun <T : Dto> checkNumEntitiesIs(clazz: Class<T>, numEntities: Long) {
         Assert.assertEquals(numEntities, dataManager.count(clazz))
-    }
-
-    private fun createInvalidAccount(id: String): Account {
-        // It will be invalid cos the accountType does not have a name
-        val accountType = AccountType(symbol = "symbol")
-        return Account(id, SyncStatus.SYNC_ERROR, "displayName", "", accountType, 0, Amount.Companion.pounds(0.0))
     }
 
     //endregion

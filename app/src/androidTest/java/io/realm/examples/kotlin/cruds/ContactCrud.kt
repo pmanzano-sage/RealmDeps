@@ -16,12 +16,52 @@ class ContactCrud : AndroidTestCase() {
 
     private lateinit var dataManager: DataManager
 
-    private val CONTACT_TYPES = arrayListOf(ContactType.Companion.V3.PURCHASING, ContactType.Companion.V3.ACCOUNTS)
-    private val CONTACT_PERSON_TYPES = arrayListOf(ContactPersonType.Companion.V3.CONTRACTOR)
-    private val CONTACT_ID = "1234"
-    private val UPDATED_POST_CODE = "08030"
-    private var contact = createContact(CONTACT_ID, "John", "John's ref", "john@gmail.com", "123123123")
-    private val invalidId = "invalidId"
+    companion object {
+        private val CONTACT_TYPES = arrayListOf(ContactType.Companion.V3.PURCHASING, ContactType.Companion.V3.ACCOUNTS)
+        private val CONTACT_PERSON_TYPES = arrayListOf(ContactPersonType.Companion.V3.CONTRACTOR)
+        private val CONTACT_ID = "1234"
+        private val UPDATED_POST_CODE = "08030"
+        private var contact = createContact(CONTACT_ID, "John", "John's ref", "john@gmail.com", "123123123")
+        private val invalidId = "invalidId"
+
+
+        /**
+         * Creates a dummy Contact.
+         */
+        fun createContact(id: String, name: String, reference: String, email: String, mobile: String): Contact {
+            val mainAddress = Address.create(null, "street1 main", "street2 main", "town", "county", "postCode", AddressType.Companion.V3.DELIVERY)
+            val deliveryAddress = Address.create(null, "street1 dely", "street2 dely", "town", "county", "postCode", AddressType.Companion.V3.DELIVERY)
+            val contactPersonTypes = ContactPersonType.createList(CONTACT_PERSON_TYPES)
+            val mainContactPerson = ContactPerson.create(null, contactPersonTypes, name, "job", "telephone", mobile, email, "fax", address = mainAddress)
+            val contactTypes = ContactType.createList(CONTACT_TYPES)
+            return Contact(id, SyncStatus.SYNC_SUCCESS, contactTypes, name, reference, mainAddress, deliveryAddress, mainContactPerson)
+        }
+
+        /**
+         * This Contact can be fixed because it lacks some dependency details.
+         */
+        fun createInvalidContact(id: String): Contact {
+            // It will be invalid cos the AddressType has no symbol.
+            // It should be fixable since AddressType is annotated as SupportsIdOnly
+            val invalidAddressType = AddressType(invalidId, SyncStatus.SYNC_SUCCESS, invalidId)
+            val ireland = Country.create(Country.Companion.Code.IE)
+            val invalidAddress = Address(id, SyncStatus.SYNC_SUCCESS, "street1", "street2", "town", "county", "postCode", ireland, invalidAddressType)
+            val deliveryAddress = Address.create(null, "street1 dely", "street2 dely", "town", "county", "postCode", AddressType.Companion.V3.DELIVERY)
+            val contactPersonTypes = ContactPersonType.createList(CONTACT_PERSON_TYPES)
+            val mainContactPerson = ContactPerson.create(null, contactPersonTypes, "mainContact", "job", "telephone", "mobile", "email", "fax", address = invalidAddress)
+            val contactTypes = ContactType.createList(CONTACT_TYPES)
+            return Contact(id, SyncStatus.SYNC_SUCCESS, contactTypes, "rootContact", "reference", invalidAddress, deliveryAddress, mainContactPerson)
+        }
+
+        /**
+         * This Contact can not be fixed because the name is missing!
+         * 'name' is a mandatory field.
+         */
+        fun createInvalidContactNotFixable(id: String): Contact {
+            return createContact(CONTACT_ID, "", "John's ref", "john@gmail.com", "123123123")
+        }
+
+    }
 
     /**
      * Start with a fresh db.
@@ -149,6 +189,10 @@ class ContactCrud : AndroidTestCase() {
      * DEPENDENCY LOOKUP FAILURE (INVALID FIELD)
      *
      * The same test as testDependencyLookup, but this time the missing field is not a dependency.
+     *
+     * NOTE: Since this entity is annotated as @SupportsIdOnly it will try to replace the whole
+     * entity looking by id in the db.
+     * So, instead of throwing an InvalidFieldException it will throw NotFoundException.
      */
     fun testDependencyLookupFail2() {
 
@@ -157,11 +201,11 @@ class ContactCrud : AndroidTestCase() {
         try {
             dataManager.save(invalidEntity, false)
             Assert.fail("A InvalidFieldException should be triggered")
-        } catch(e: InvalidFieldException) {
+        } catch(e: NotFoundException) {
             Log.w("cool", "$e")
         } catch(e: Exception) {
             e.printStackTrace()
-            Assert.fail("Should have thrown a InvalidFieldException instead of ${e.javaClass.simpleName}")
+            Assert.fail("Should have thrown a NotFoundException instead of ${e.javaClass.simpleName}")
         }
 
         // Now check that the item was actually NOT saved
@@ -173,43 +217,6 @@ class ContactCrud : AndroidTestCase() {
 
     private fun <T : Dto> checkNumEntitiesIs(clazz: Class<T>, numEntities: Long) {
         Assert.assertEquals(numEntities, dataManager.count(clazz))
-    }
-
-
-    /**
-     * Creates a dummy Contact.
-     */
-    private fun createContact(id: String, name: String, reference: String, email: String, mobile: String): Contact {
-        val mainAddress = Address.create(null, "street1 main", "street2 main", "town", "county", "postCode", AddressType.Companion.V3.DELIVERY)
-        val deliveryAddress = Address.create(null, "street1 dely", "street2 dely", "town", "county", "postCode", AddressType.Companion.V3.DELIVERY)
-        val contactPersonTypes = ContactPersonType.createList(CONTACT_PERSON_TYPES)
-        val mainContactPerson = ContactPerson.create(null, contactPersonTypes, name, "job", "telephone", mobile, email, "fax", address = mainAddress)
-        val contactTypes = ContactType.createList(CONTACT_TYPES)
-        return Contact(id, SyncStatus.SYNC_SUCCESS, contactTypes, name, reference, mainAddress, deliveryAddress, mainContactPerson)
-    }
-
-    /**
-     * This Contact can be fixed because it lacks some dependency details.
-     */
-    private fun createInvalidContact(id: String): Contact {
-        // It will be invalid cos the AddressType has no symbol.
-        // It should be fixable since AddressType is annotated as SupportsIdOnly
-        val invalidAddressType = AddressType(invalidId, SyncStatus.SYNC_SUCCESS, invalidId)
-        val ireland = Country.create(Country.Companion.Code.IE)
-        val invalidAddress = Address(id, SyncStatus.SYNC_SUCCESS, "street1", "street2", "town", "county", "postCode", ireland, invalidAddressType)
-        val deliveryAddress = Address.create(null, "street1 dely", "street2 dely", "town", "county", "postCode", AddressType.Companion.V3.DELIVERY)
-        val contactPersonTypes = ContactPersonType.createList(CONTACT_PERSON_TYPES)
-        val mainContactPerson = ContactPerson.create(null, contactPersonTypes, name, "job", "telephone", "mobile", "email", "fax", address = invalidAddress)
-        val contactTypes = ContactType.createList(CONTACT_TYPES)
-        return Contact(id, SyncStatus.SYNC_SUCCESS, contactTypes, name, "reference", invalidAddress, deliveryAddress, mainContactPerson)
-    }
-
-    /**
-     * This Contact can not be fixed because the name is missing!
-     * 'name' is a mandatory field.
-     */
-    fun createInvalidContactNotFixable(id: String): Contact {
-        return createContact(CONTACT_ID, "", "John's ref", "john@gmail.com", "123123123")
     }
 
     //endregion

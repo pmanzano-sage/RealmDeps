@@ -3,6 +3,7 @@ package io.realm.examples.kotlin.cruds
 import android.test.AndroidTestCase
 import io.realm.Realm
 import io.realm.RealmConfiguration
+import io.realm.examples.kotlin.CrudUtils
 import io.realm.examples.kotlin.data.DataManager
 import io.realm.examples.kotlin.data.Dto
 import io.realm.examples.kotlin.data.RealmDataManager
@@ -85,7 +86,7 @@ class TaxSchemeCrud : AndroidTestCase() {
      * VALIDATION
      */
     fun testValidation() {
-        val invalidItem = createInvalidEntity(TaxScheme::class.java, invalidItemName)
+        val invalidItem = CrudUtils.createInvalidEntity(TaxScheme::class.java, invalidItemName)
         try {
             dataManager.save(invalidItem)
             Assert.fail("Should have thrown a validation exception")
@@ -101,7 +102,7 @@ class TaxSchemeCrud : AndroidTestCase() {
         val existingItem = TaxScheme.create(invalidItemName, invalidItemName)
         dataManager.save(existingItem)
 
-        val invalidItem = createInvalidEntity(TaxScheme::class.java, invalidItemName)
+        val invalidItem = CrudUtils.createInvalidEntity(TaxScheme::class.java, invalidItemName)
         try {
             dataManager.save(invalidItem, false)
         } catch(e: Exception) {
@@ -120,15 +121,6 @@ class TaxSchemeCrud : AndroidTestCase() {
 
     private fun <T : Dto> checkNumEntitiesIs(clazz: Class<T>, numEntities: Long) {
         Assert.assertEquals(numEntities, dataManager.count(clazz))
-    }
-
-    private fun <T : Dto> createInvalidEntity(clazz: Class<T>, id: String): Dto {
-        val ctor = clazz.constructors.first()
-        val dto = ctor.newInstance()
-        val field = clazz.declaredFields[0]
-        field.isAccessible = true
-        field.set(dto, id)
-        return dto as T
     }
 
     //endregion

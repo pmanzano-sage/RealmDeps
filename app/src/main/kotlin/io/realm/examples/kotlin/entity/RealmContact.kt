@@ -10,6 +10,7 @@ import io.realm.examples.kotlin.dto.definition.SyncStatus
 import java.util.*
 
 @RealmClass
+@SupportsIdOnly
 open class RealmContact(
         @PrimaryKey @Required override var id: String = generateId(),
         override var sync: Int = SyncStatus.getDefault().ordinal,

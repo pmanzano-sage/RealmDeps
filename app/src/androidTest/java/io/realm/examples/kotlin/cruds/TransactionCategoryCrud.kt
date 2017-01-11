@@ -3,6 +3,7 @@ package io.realm.examples.kotlin.cruds
 import android.test.AndroidTestCase
 import io.realm.Realm
 import io.realm.RealmConfiguration
+import io.realm.examples.kotlin.CrudUtils
 import io.realm.examples.kotlin.data.DataManager
 import io.realm.examples.kotlin.data.Dto
 import io.realm.examples.kotlin.data.RealmDataManager
@@ -90,7 +91,7 @@ class TransactionCategoryCrud : AndroidTestCase() {
      * VALIDATION
      */
     fun testValidation() {
-        val invalidItem = createInvalidEntity(TransactionCategory::class.java, enumItem.name)
+        val invalidItem = CrudUtils.createInvalidEntity(TransactionCategory::class.java, enumItem.name)
         try {
             dataManager.save(invalidItem)
             Assert.fail("Should have thrown a validation exception")
@@ -105,7 +106,7 @@ class TransactionCategoryCrud : AndroidTestCase() {
         // Insert an item into the db
         dataManager.save(item)
 
-        val invalidItem = createInvalidEntity(TransactionCategory::class.java, id)
+        val invalidItem = CrudUtils.createInvalidEntity(TransactionCategory::class.java, id)
         try {
             dataManager.save(invalidItem, false)
         } catch(e: Exception) {
@@ -125,15 +126,6 @@ class TransactionCategoryCrud : AndroidTestCase() {
 
     private fun <T : Dto> checkNumEntitiesIs(clazz: Class<T>, numEntities: Long) {
         Assert.assertEquals(numEntities, dataManager.count(clazz))
-    }
-
-    private fun <T : Dto> createInvalidEntity(clazz: Class<T>, id: String): Dto {
-        val ctor = clazz.constructors.first()
-        val dto = ctor.newInstance()
-        val field = clazz.declaredFields[0]
-        field.isAccessible = true
-        field.set(dto, id)
-        return dto as T
     }
 
     //endregion

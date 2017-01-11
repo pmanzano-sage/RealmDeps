@@ -43,8 +43,13 @@ data class Contact(
     }
 
     override fun toDisplayString(): String {
-        return name ?: ""
+        return name
     }
+
+    fun numAddresses(): Int {
+        return arrayListOf(mainAddress, deliveryAddress).filterNotNull().count()
+    }
+
 
     // Convenient factory methods for V3
     companion object {
