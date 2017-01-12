@@ -84,7 +84,7 @@ class AddressTypeCrud : AndroidTestCase() {
     /**
      * DELETE
      */
-    fun testDeleteContact() {
+    fun testDelete() {
         dataManager.save(item)
         dataManager.delete(item)
         checkNumEntitiesIs(AddressType::class.java, 0)

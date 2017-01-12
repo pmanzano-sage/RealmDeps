@@ -84,7 +84,7 @@ class ContactTypeCrud : AndroidTestCase() {
     /**
      * DELETE
      */
-    fun testDeleteContact() {
+    fun testDelete() {
         dataManager.save(item)
         dataManager.delete(item)
         checkNumEntitiesIs(ContactType::class.java, 0)

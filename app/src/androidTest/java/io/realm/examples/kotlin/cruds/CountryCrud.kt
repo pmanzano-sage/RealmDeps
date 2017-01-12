@@ -82,7 +82,7 @@ class CountryCrud : AndroidTestCase() {
     /**
      * DELETE
      */
-    fun testDeleteContact() {
+    fun testDelete() {
         dataManager.save(item)
         dataManager.delete(item)
         checkNumEntitiesIs(Country::class.java, 0)
